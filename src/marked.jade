@@ -1,0 +1,17 @@
+- var ngModelOptions="{updateOn: 'default blur', debounce: {default: 500, blur: 0}}"
+.row: .col-sm-12
+  h3(ng-bind="marked.label")
+  ul.nav.nav-tabs
+    li(ng-class="{'active': 'markdown'}[marked.mode]")
+      button.btn.btn-default(type="button" ng-click="marked.mode='write'") Markdown
+    li(ng-class="{'active': 'preview'}[marked.mode]")
+      button.btn.btn-default(type="button" ng-click="marked.mode='preview'") Vorschau
+    li(ng-class="{'active': 'both'}[marked.mode]")
+      button.btn.btn-default(type="button" ng-click="marked.mode='both'") nebeneinander
+.row(ng-switch="marked.mode")
+  .col-sm-12(ng-switch-when="markdown")
+    textarea.form-control(ng-model="marked.input" ng-model-options=ngModelOptions)
+  .col-sm-12(ng-switch-when="preview" ng-bind-html="marked.output")
+  .col-sm-6(ng-switch-when="both")
+    textarea.form-control(ng-model="marked.input" ng-model-options=ngModelOptions)
+  .col-sm-6(ng-switch-when="both" ng-bind-html="marked.output")
