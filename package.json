@@ -1,15 +1,18 @@
 {
   "name": "wbt-text",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Angular-Modul zum rendern von Markdown mit MathJax-Formeln",
   "main": "dist/wbt-text.js",
   "browser": "dist/wbt-text.min.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "demo": "jade -o demo demo/index.jade && webpack-dev-server --devtool eval --progress --inline --hot --content-base demo --config webpack.demo.config.js",
+    "dev": "webpack",
+    "production": "NODE_ENV=production webpack --config webpack.production.config.js"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/tamaracha/wbt-text"
+    "url": "git://github.com/tamaracha/wbt-text.git"
   },
   "keywords": [
     "rendering",
@@ -35,6 +38,6 @@
     "ng-annotate-loader": "0.0.6",
     "style-loader": "^0.12.3",
     "webpack": "^1.11.0",
-    "webpack-notifier": "^1.2.1"
+    "webpack-dev-server": "^1.10.1"
   }
 }

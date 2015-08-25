@@ -82,7 +82,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _markedDirective2 = _interopRequireDefault(_markedDirective);
 
-	exports['default'] = _angular2['default'].module('markdown', ['ngSanitize']).constant('markdownit', _markdownIt2['default']).provider('markdown', _markdownProvider2['default']).directive('markdown', _markdownDirective2['default']).directive('marked', _markedDirective2['default']).name;
+	exports['default'] = _angular2['default'].module('wbt.text', ['ngSanitize']).constant('markdownit', _markdownIt2['default']).provider('markdown', _markdownProvider2['default']).directive('markdown', _markdownDirective2['default']).directive('marked', _markedDirective2['default']).name;
 	module.exports = exports['default'];
 
 /***/ },
@@ -9998,33 +9998,35 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports['default'] = markdownDirective;
 	/*@ngInject*/
-	function markdownDirective($sanitize, markdown) {
+	function markdownDirective($window, $sanitize, markdown) {
 	  function link(scope, el, attrs) {
 	    function render(val) {
 	      var html = scope.renderer.render(val);
 	      var saneHtml = $sanitize(html);
 	      el.html(saneHtml);
-	      if (attrs.hasOwnProperty('mathJax')) {
-	        MathJax.Hub.Queue(['Typeset', MathJax.Hub, el[0]]); // eslint-disable-line
+	      if ($window.MathJax && attrs.hasOwnProperty('mathJax')) {
+	        $window.MathJax.Hub.Queue(['Typeset', $window.MathJax.Hub, el[0]]);
 	      }
 	    }
 	    if (!scope.renderer) {
 	      scope.renderer = markdown;
 	    }
 	    render(scope.markdown || el.text());
-	    var clean = scope.$watch('markdown', render);
-	    scope.$on('$destroy', clean);
+	    if (scope.markdown) {
+	      var clean = scope.$watch('markdown', render);
+	      scope.$on('$destroy', clean);
+	    }
 	  }
 	  return {
 	    restrict: 'AE',
 	    scope: {
-	      'markdown': '?=',
-	      renderer: '?&'
+	      'markdown': '=?',
+	      renderer: '&?'
 	    },
 	    link: link
 	  };
 	}
-	markdownDirective.$inject = ["$sanitize", "markdown"];
+	markdownDirective.$inject = ["$window", "$sanitize", "markdown"];
 
 	module.exports = exports['default'];
 

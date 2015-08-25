@@ -4,7 +4,7 @@ import Markdown from './markdown-provider';
 import markdown from './markdown-directive';
 import marked from './marked-directive';
 
-export default angular.module('markdown',['ngSanitize'])
+export default angular.module('wbt.text',['ngSanitize'])
 .constant('markdownit',markdownit)
 .provider('markdown',Markdown)
 .directive('markdown',markdown)
