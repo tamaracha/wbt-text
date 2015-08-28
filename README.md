@@ -29,7 +29,7 @@ angular.module('myApp',[wbtText]);
 
 ### Browser
 * Lade dieses Repo als Zip herunter und entpacke es.
-* Binde die Voraussetzungen und die Datei dist/wbt-text.min.js als Script-Tag im HTML ein (bitte Pfade anpassen). Falls Markdown-it schon vom CDN aus eingebunden wurde, wähle die Datei dist/wbt-text-no-markdown-it.min.js.
+* Binde die Voraussetzungen und die Datei dist/wbt-text.min.js als Script-Tag im HTML ein (bitte Pfade anpassen).
 
 ```html
 <script src="angular.min.js"></script>
@@ -72,5 +72,9 @@ Füge ein markdown-Element im HTML ein und setze Text zwischen die Tags.
 ### Provider
 Es kann das Preset und die Optionen von markdown-it konfiguriert werden. Konfiguriere das Modul mit dem markdownProvider. Es gibt zwei Getter/Setter-Eigenschaften
 
-* markdownProvider.preset
-* markdownProvider.options
+* markdownProvider.preset: stellt das Preset von markdown-it ein
+* markdownProvider.options: ändert die Optionen von markdown-it. Standardowerte:
+  * html: true
+  * typographer: true
+ * quotes: '„“‚‘'
+ * breaks: true

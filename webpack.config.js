@@ -1,5 +1,7 @@
 'use strict';
-module.exports = {
+const compression = require('compression-webpack-plugin');
+const prod = process.env.NODE_ENV === 'production';
+const config = {
   entry: './src/index.js',
   output: {
     filename: 'wbt-text.js',
@@ -10,9 +12,9 @@ module.exports = {
   module: {
     loaders: [
       {
+        loader: 'ng-annotate?add!babel!eslint',
         test: /\.js$/,
-        exclude: /(node_modules|bower_components)/,
-        loader: 'ng-annotate?add!babel!eslint'
+        exclude: /(node_modules|bower_components)/
       },
       {
         loader: 'style!css',
@@ -20,7 +22,7 @@ module.exports = {
         exclude: /(node_modules|bower_components)/
       },
       {
-        loader: `jade-html?doctype=html&basedir=${__dirname}/src`,
+        loader: `template-html?engine=jade&doctype=html&basedir=${__dirname}/src`,
         test: /\.jade$/,
         exclude: /(node_modules|bower_components)/
       },
@@ -33,5 +35,12 @@ module.exports = {
   externals: {
     angular: 'angular',
     MathJax: 'MathJax'
-  }
+  },
+  plugins: [
+    new compression()
+  ]
 };
+if(prod){
+  config.output.filename = 'wbt-text.min.js';
+}
+module.exports = config;

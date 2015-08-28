@@ -1,11 +1,9 @@
 doctype html
 html(lang="de" ng-app="demoApp" strict-di)
   head
-    title Markdown Demo App
+    title=locals.htmlWebpackPlugin.options.title
     meta(charset="utf-8")
     script(src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.3/angular.js")
     script(src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.3/angular-sanitize.js")
-    script(src="demo.library.js")
-    script(src="demo.app.js")
   body
     demo
