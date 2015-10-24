@@ -32,6 +32,7 @@
     "jade": "^1.11.0",
     "json-loader": "^0.5.2",
     "markdown-it": "^5.0.0",
+    "mdfigcaption": "^0.1.1",
     "ng-annotate-loader": "0.0.10",
     "style-loader": "^0.13.0",
     "template-html-loader": "0.0.3",

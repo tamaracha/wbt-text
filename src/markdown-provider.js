@@ -1,4 +1,5 @@
 import angular from 'angular';
+import mdfigcaption from 'mdfigcaption';
 export default /*@ngInject*/class MarkdownProvider{
   constructor(markdownit){
     this.config = {
@@ -9,7 +10,7 @@ export default /*@ngInject*/class MarkdownProvider{
         quotes: '„“‚‘',
         breaks: true
       },
-      plugins: []
+      plugins: [mdfigcaption]
     };
     this.markdownit = markdownit;
   }
