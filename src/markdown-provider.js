@@ -8,7 +8,8 @@ export default /*@ngInject*/class MarkdownProvider{
         typographer: true,
         quotes: '„“‚‘',
         breaks: true
-      }
+      },
+      plugins: []
     };
     this.markdownit = markdownit;
   }
@@ -26,7 +27,18 @@ export default /*@ngInject*/class MarkdownProvider{
     angular.extend(this.config.options, val);
     return this;
   }
+  get plugins(){
+    return this.config.plugins;
+  }
+  use(val){
+    this.config.plugins.push(val);
+    return this;
+  }
   $get(){
-    return this.markdownit(this.config.preset,this.config.options);
+    const md = this.markdownit(this.config.preset,this.config.options);
+    angular.forEach(this.config.plugins,(plugin) => {
+      md.use(plugin);
+    });
+    return md;
   }
 }

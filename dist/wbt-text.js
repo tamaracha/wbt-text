@@ -10194,16 +10194,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	        typographer: true,
 	        quotes: '„“‚‘',
 	        breaks: true
-	      }
+	      },
+	      plugins: []
 	    };
 	    this.markdownit = markdownit;
 	  }
 	  MarkdownProvider.$inject = ["markdownit"];
 
 	  _createClass(MarkdownProvider, [{
+	    key: 'use',
+	    value: function use(val) {
+	      this.config.plugins.push(val);
+	      return this;
+	    }
+	  }, {
 	    key: '$get',
 	    value: function $get() {
-	      return this.markdownit(this.config.preset, this.config.options);
+	      var md = this.markdownit(this.config.preset, this.config.options);
+	      _angular2['default'].forEach(this.config.plugins, function (plugin) {
+	        md.use(plugin);
+	      });
+	      return md;
 	    }
 	  }, {
 	    key: 'preset',
@@ -10222,6 +10233,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    set: function set(val) {
 	      _angular2['default'].extend(this.config.options, val);
 	      return this;
+	    }
+	  }, {
+	    key: 'plugins',
+	    get: function get() {
+	      return this.config.plugins;
 	    }
 	  }]);
 
