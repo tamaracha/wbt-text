@@ -70,15 +70,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _markdownIt2 = _interopRequireDefault(_markdownIt);
 
-	var _markdownProvider = __webpack_require__(69);
+	var _markdownProvider = __webpack_require__(71);
 
 	var _markdownProvider2 = _interopRequireDefault(_markdownProvider);
 
-	var _markdownDirective = __webpack_require__(70);
+	var _markdownDirective = __webpack_require__(72);
 
 	var _markdownDirective2 = _interopRequireDefault(_markdownDirective);
 
-	var _markedDirective = __webpack_require__(71);
+	var _markedDirective = __webpack_require__(73);
 
 	var _markedDirective2 = _interopRequireDefault(_markedDirective);
 
@@ -116,15 +116,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	var ParserCore   = __webpack_require__(23);
 	var ParserBlock  = __webpack_require__(33);
 	var ParserInline = __webpack_require__(48);
-	var LinkifyIt    = __webpack_require__(62);
+	var LinkifyIt    = __webpack_require__(64);
 	var mdurl        = __webpack_require__(8);
-	var punycode     = __webpack_require__(64);
+	var punycode     = __webpack_require__(66);
 
 
 	var config = {
-	  'default': __webpack_require__(66),
-	  zero: __webpack_require__(67),
-	  commonmark: __webpack_require__(68)
+	  'default': __webpack_require__(68),
+	  zero: __webpack_require__(69),
+	  commonmark: __webpack_require__(70)
 	};
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -164,7 +164,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (!parsed.protocol || RECODE_HOSTNAME_FOR.indexOf(parsed.protocol) >= 0) {
 	      try {
 	        parsed.hostname = punycode.toASCII(parsed.hostname);
-	      } catch(er) {}
+	      } catch (er) { /**/ }
 	    }
 	  }
 
@@ -184,7 +184,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (!parsed.protocol || RECODE_HOSTNAME_FOR.indexOf(parsed.protocol) >= 0) {
 	      try {
 	        parsed.hostname = punycode.toUnicode(parsed.hostname);
-	      } catch(er) {}
+	      } catch (er) { /**/ }
 	    }
 	  }
 
@@ -489,6 +489,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if (presets.components[name].rules) {
 	        self[name].ruler.enableOnly(presets.components[name].rules);
 	      }
+	      if (presets.components[name].rules2) {
+	        self[name].ruler2.enableOnly(presets.components[name].rules2);
+	      }
 	    });
 	  }
 	  return this;
@@ -521,6 +524,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    result = result.concat(this[chain].ruler.enable(list, true));
 	  }, this);
 
+	  result = result.concat(this.inline.ruler2.enable(list, true));
+
 	  var missed = list.filter(function (name) { return result.indexOf(name) < 0; });
 
 	  if (missed.length && !ignoreInvalid) {
@@ -546,6 +551,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  [ 'core', 'block', 'inline' ].forEach(function (chain) {
 	    result = result.concat(this[chain].ruler.disable(list, true));
 	  }, this);
+
+	  result = result.concat(this.inline.ruler2.disable(list, true));
 
 	  var missed = list.filter(function (name) { return result.indexOf(name) < 0; });
 
@@ -590,7 +597,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * AST).
 	 *
 	 * `env` is used to pass data between "distributed" rules and return additional
-	 * metadata like reference info, needed for for renderer. It also can be used to
+	 * metadata like reference info, needed for the renderer. It also can be used to
 	 * inject data in specific cases. Usually, you will be ok to pass `{}`,
 	 * and then pass updated object to renderer.
 	 **/
@@ -815,6 +822,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	////////////////////////////////////////////////////////////////////////////////
 
+	function isSpace(code) {
+	  switch (code) {
+	    case 0x09:
+	    case 0x20:
+	      return true;
+	  }
+	  return false;
+	}
+
 	// Zs (unicode class) || [\t\f\v\r\n]
 	function isWhiteSpace(code) {
 	  if (code >= 0x2000 && code <= 0x200A) { return true; }
@@ -841,8 +857,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var UNICODE_PUNCT_RE = __webpack_require__(7);
 
 	// Currently without astral characters support.
-	function isPunctChar(char) {
-	  return UNICODE_PUNCT_RE.test(char);
+	function isPunctChar(ch) {
+	  return UNICODE_PUNCT_RE.test(ch);
 	}
 
 
@@ -922,6 +938,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	// exports.replaceEntities     = replaceEntities;
 	exports.escapeHtml          = escapeHtml;
 	exports.arrayReplaceAt      = arrayReplaceAt;
+	exports.isSpace             = isSpace;
 	exports.isWhiteSpace        = isWhiteSpace;
 	exports.isMdAsciiPunct      = isMdAsciiPunct;
 	exports.isPunctChar         = isPunctChar;
@@ -3071,7 +3088,7 @@ return /******/ (function(modules) { // webpackBootstrap
 		"zscr": "𝓏",
 		"zwj": "‍",
 		"zwnj": "‌"
-	}
+	};
 
 /***/ },
 /* 7 */
@@ -3240,7 +3257,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  cache = getDecodeCache(exclude);
 
 	  return string.replace(/(%[a-f0-9]{2})+/gi, function(seq) {
-	    var i, l, b1, b2, b3, b4, char,
+	    var i, l, b1, b2, b3, b4, chr,
 	        result = '';
 
 	    for (i = 0, l = seq.length; i < l; i += 3) {
@@ -3256,12 +3273,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        b2 = parseInt(seq.slice(i + 4, i + 6), 16);
 
 	        if ((b2 & 0xC0) === 0x80) {
-	          char = ((b1 << 6) & 0x7C0) | (b2 & 0x3F);
+	          chr = ((b1 << 6) & 0x7C0) | (b2 & 0x3F);
 
-	          if (char < 0x80) {
+	          if (chr < 0x80) {
 	            result += '\ufffd\ufffd';
 	          } else {
-	            result += String.fromCharCode(char);
+	            result += String.fromCharCode(chr);
 	          }
 
 	          i += 3;
@@ -3275,12 +3292,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        b3 = parseInt(seq.slice(i + 7, i + 9), 16);
 
 	        if ((b2 & 0xC0) === 0x80 && (b3 & 0xC0) === 0x80) {
-	          char = ((b1 << 12) & 0xF000) | ((b2 << 6) & 0xFC0) | (b3 & 0x3F);
+	          chr = ((b1 << 12) & 0xF000) | ((b2 << 6) & 0xFC0) | (b3 & 0x3F);
 
-	          if (char < 0x800 || (char >= 0xD800 && char <= 0xDFFF)) {
+	          if (chr < 0x800 || (chr >= 0xD800 && chr <= 0xDFFF)) {
 	            result += '\ufffd\ufffd\ufffd';
 	          } else {
-	            result += String.fromCharCode(char);
+	            result += String.fromCharCode(chr);
 	          }
 
 	          i += 6;
@@ -3295,13 +3312,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	        b4 = parseInt(seq.slice(i + 10, i + 12), 16);
 
 	        if ((b2 & 0xC0) === 0x80 && (b3 & 0xC0) === 0x80 && (b4 & 0xC0) === 0x80) {
-	          char = ((b1 << 18) & 0x1C0000) | ((b2 << 12) & 0x3F000) | ((b3 << 6) & 0xFC0) | (b4 & 0x3F);
+	          chr = ((b1 << 18) & 0x1C0000) | ((b2 << 12) & 0x3F000) | ((b3 << 6) & 0xFC0) | (b4 & 0x3F);
 
-	          if (char < 0x10000 || char > 0x10FFFF) {
+	          if (chr < 0x10000 || chr > 0x10FFFF) {
 	            result += '\ufffd\ufffd\ufffd\ufffd';
 	          } else {
-	            char -= 0x10000;
-	            result += String.fromCharCode(0xD800 + (char >> 10), 0xDC00 + (char & 0x3FF));
+	            chr -= 0x10000;
+	            result += String.fromCharCode(0xD800 + (chr >> 10), 0xDC00 + (chr & 0x3FF));
 	          }
 
 	          i += 9;
@@ -3954,7 +3971,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 
-	default_rules.fence = function (tokens, idx, options, env, self) {
+	default_rules.fence = function (tokens, idx, options, env, slf) {
 	  var token = tokens[idx],
 	      info = token.info ? unescapeAll(token.info).trim() : '',
 	      langName = '',
@@ -3971,13 +3988,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    highlighted = escapeHtml(token.content);
 	  }
 
-	  return  '<pre><code' + self.renderAttrs(token) + '>'
+	  return  '<pre><code' + slf.renderAttrs(token) + '>'
 	        + highlighted
 	        + '</code></pre>\n';
 	};
 
 
-	default_rules.image = function (tokens, idx, options, env, self) {
+	default_rules.image = function (tokens, idx, options, env, slf) {
 	  var token = tokens[idx];
 
 	  // "alt" attr MUST be set, even if empty. Because it's mandatory and
@@ -3986,9 +4003,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // Replace content with actual value
 
 	  token.attrs[token.attrIndex('alt')][1] =
-	    self.renderInlineAsText(token.children, options, env);
+	    slf.renderInlineAsText(token.children, options, env);
 
-	  return self.renderToken(tokens, idx, options);
+	  return slf.renderToken(tokens, idx, options);
 	};
 
 
@@ -4658,37 +4675,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 
-	var TABS_SCAN_RE = /[\n\t]/g;
 	var NEWLINES_RE  = /\r[\n\u0085]|[\u2424\u2028\u0085]/g;
 	var NULL_RE      = /\u0000/g;
 
 
 	module.exports = function inline(state) {
-	  var str, lineStart, lastTabPos;
+	  var str;
 
 	  // Normalize newlines
 	  str = state.src.replace(NEWLINES_RE, '\n');
 
 	  // Replace NULL characters
 	  str = str.replace(NULL_RE, '\uFFFD');
-
-	  // Replace tabs with proper number of spaces (1..4)
-	  if (str.indexOf('\t') >= 0) {
-	    lineStart = 0;
-	    lastTabPos = 0;
-
-	    str = str.replace(TABS_SCAN_RE, function (match, offset) {
-	      var result;
-	      if (str.charCodeAt(offset) === 0x0A) {
-	        lineStart = offset + 1;
-	        lastTabPos = 0;
-	        return match;
-	      }
-	      result = '    '.slice((offset - lineStart - lastTabPos) % 4);
-	      lastTabPos = offset - lineStart + 1;
-	      return result;
-	    });
-	  }
 
 	  state.src = str;
 	};
@@ -5386,7 +5384,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // Termination condition for nested calls.
 	    // Nested calls currently used for blockquotes & lists
-	    if (state.tShift[line] < state.blkIndent) { break; }
+	    if (state.sCount[line] < state.blkIndent) { break; }
 
 	    // If nesting level exceeded - skip tail to the end. That's not ordinary
 	    // situation and we should not care about content.
@@ -5464,7 +5462,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = function code(state, startLine, endLine/*, silent*/) {
 	  var nextLine, last, token;
 
-	  if (state.tShift[startLine] - state.blkIndent < 4) { return false; }
+	  if (state.sCount[startLine] - state.blkIndent < 4) { return false; }
 
 	  last = nextLine = startLine + 1;
 
@@ -5473,7 +5471,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      nextLine++;
 	      continue;
 	    }
-	    if (state.tShift[nextLine] - state.blkIndent >= 4) {
+	    if (state.sCount[nextLine] - state.blkIndent >= 4) {
 	      nextLine++;
 	      last = nextLine;
 	      continue;
@@ -5544,7 +5542,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    pos = mem = state.bMarks[nextLine] + state.tShift[nextLine];
 	    max = state.eMarks[nextLine];
 
-	    if (pos < max && state.tShift[nextLine] < state.blkIndent) {
+	    if (pos < max && state.sCount[nextLine] < state.blkIndent) {
 	      // non-empty line with negative indent should stop the list:
 	      // - ```
 	      //  test
@@ -5553,7 +5551,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    if (state.src.charCodeAt(pos) !== marker) { continue; }
 
-	    if (state.tShift[nextLine] - state.blkIndent >= 4) {
+	    if (state.sCount[nextLine] - state.blkIndent >= 4) {
 	      // closing fence should be indented less than 4 spaces
 	      continue;
 	    }
@@ -5574,7 +5572,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 
 	  // If a fence has heading spaces, they should be removed from its inner block
-	  len = state.tShift[startLine];
+	  len = state.sCount[startLine];
 
 	  state.line = nextLine + (haveEndMarker ? 1 : 0);
 
@@ -5590,15 +5588,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 36 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// Block quotes
 
 	'use strict';
 
+	var isSpace = __webpack_require__(4).isSpace;
+
 
 	module.exports = function blockquote(state, startLine, endLine, silent) {
-	  var nextLine, lastLineEmpty, oldTShift, oldBMarks, oldIndent, oldParentType, lines,
+	  var nextLine, lastLineEmpty, oldTShift, oldSCount, oldBMarks, oldIndent, oldParentType, lines, initial, offset, ch,
 	      terminatorRules, token,
 	      i, l, terminate,
 	      pos = state.bMarks[startLine] + state.tShift[startLine],
@@ -5611,18 +5611,38 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // so no point trying to find the end of it in silent mode
 	  if (silent) { return true; }
 
-	  // skip one optional space after '>'
+	  // skip one optional space (but not tab, check cmark impl) after '>'
 	  if (state.src.charCodeAt(pos) === 0x20) { pos++; }
 
 	  oldIndent = state.blkIndent;
 	  state.blkIndent = 0;
 
+	  // skip spaces after ">" and re-calculate offset
+	  initial = offset = state.sCount[startLine] + pos - (state.bMarks[startLine] + state.tShift[startLine]);
+
 	  oldBMarks = [ state.bMarks[startLine] ];
 	  state.bMarks[startLine] = pos;
 
-	  // check if we have an empty blockquote
-	  pos = pos < max ? state.skipSpaces(pos) : pos;
+	  while (pos < max) {
+	    ch = state.src.charCodeAt(pos);
+
+	    if (isSpace(ch)) {
+	      if (ch === 0x09) {
+	        offset += 4 - offset % 4;
+	      } else {
+	        offset++;
+	      }
+	    } else {
+	      break;
+	    }
+
+	    pos++;
+	  }
+
 	  lastLineEmpty = pos >= max;
+
+	  oldSCount = [ state.sCount[startLine] ];
+	  state.sCount[startLine] = offset - initial;
 
 	  oldTShift = [ state.tShift[startLine] ];
 	  state.tShift[startLine] = pos - state.bMarks[startLine];
@@ -5648,7 +5668,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  //      - - -
 	  //     ```
 	  for (nextLine = startLine + 1; nextLine < endLine; nextLine++) {
-	    if (state.tShift[nextLine] < oldIndent) { break; }
+	    if (state.sCount[nextLine] < oldIndent) { break; }
 
 	    pos = state.bMarks[nextLine] + state.tShift[nextLine];
 	    max = state.eMarks[nextLine];
@@ -5661,14 +5681,35 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (state.src.charCodeAt(pos++) === 0x3E/* > */) {
 	      // This line is inside the blockquote.
 
-	      // skip one optional space after '>'
+	      // skip one optional space (but not tab, check cmark impl) after '>'
 	      if (state.src.charCodeAt(pos) === 0x20) { pos++; }
+
+	      // skip spaces after ">" and re-calculate offset
+	      initial = offset = state.sCount[nextLine] + pos - (state.bMarks[nextLine] + state.tShift[nextLine]);
 
 	      oldBMarks.push(state.bMarks[nextLine]);
 	      state.bMarks[nextLine] = pos;
 
-	      pos = pos < max ? state.skipSpaces(pos) : pos;
+	      while (pos < max) {
+	        ch = state.src.charCodeAt(pos);
+
+	        if (isSpace(ch)) {
+	          if (ch === 0x09) {
+	            offset += 4 - offset % 4;
+	          } else {
+	            offset++;
+	          }
+	        } else {
+	          break;
+	        }
+
+	        pos++;
+	      }
+
 	      lastLineEmpty = pos >= max;
+
+	      oldSCount.push(state.sCount[nextLine]);
+	      state.sCount[nextLine] = offset - initial;
 
 	      oldTShift.push(state.tShift[nextLine]);
 	      state.tShift[nextLine] = pos - state.bMarks[nextLine];
@@ -5690,12 +5731,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    oldBMarks.push(state.bMarks[nextLine]);
 	    oldTShift.push(state.tShift[nextLine]);
+	    oldSCount.push(state.sCount[nextLine]);
 
-	    // A negative number means that this is a paragraph continuation;
+	    // A negative indentation means that this is a paragraph continuation
 	    //
-	    // Any negative number will do the job here, but it's better for it
-	    // to be large enough to make any bugs obvious.
-	    state.tShift[nextLine] = -1;
+	    state.sCount[nextLine] = -1;
 	  }
 
 	  oldParentType = state.parentType;
@@ -5718,6 +5758,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  for (i = 0; i < oldTShift.length; i++) {
 	    state.bMarks[i + startLine] = oldBMarks[i];
 	    state.tShift[i + startLine] = oldTShift[i];
+	    state.sCount[i + startLine] = oldSCount[i];
 	  }
 	  state.blkIndent = oldIndent;
 
@@ -5727,11 +5768,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 37 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// Horizontal rule
 
 	'use strict';
+
+	var isSpace = __webpack_require__(4).isSpace;
 
 
 	module.exports = function hr(state, startLine, endLine, silent) {
@@ -5748,12 +5791,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return false;
 	  }
 
-	  // markers can be mixed with spaces, but there should be at least 3 one
+	  // markers can be mixed with spaces, but there should be at least 3 of them
 
 	  cnt = 1;
 	  while (pos < max) {
 	    ch = state.src.charCodeAt(pos++);
-	    if (ch !== marker && ch !== 0x20/* space */) { return false; }
+	    if (ch !== marker && !isSpace(ch)) { return false; }
 	    if (ch === marker) { cnt++; }
 	  }
 
@@ -5773,17 +5816,19 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 38 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// Lists
 
 	'use strict';
 
+	var isSpace = __webpack_require__(4).isSpace;
+
 
 	// Search `[-+*][\n ]`, returns next pos arter marker on success
 	// or -1 on fail.
 	function skipBulletListMarker(state, startLine) {
-	  var marker, pos, max;
+	  var marker, pos, max, ch;
 
 	  pos = state.bMarks[startLine] + state.tShift[startLine];
 	  max = state.eMarks[startLine];
@@ -5796,9 +5841,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return -1;
 	  }
 
-	  if (pos < max && state.src.charCodeAt(pos) !== 0x20) {
-	    // " 1.test " - is not a list item
-	    return -1;
+	  if (pos < max) {
+	    ch = state.src.charCodeAt(pos);
+
+	    if (!isSpace(ch)) {
+	      // " -test " - is not a list item
+	      return -1;
+	    }
 	  }
 
 	  return pos;
@@ -5843,9 +5892,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 
 
-	  if (pos < max && state.src.charCodeAt(pos) !== 0x20/* space */) {
-	    // " 1.test " - is not a list item
-	    return -1;
+	  if (pos < max) {
+	    ch = state.src.charCodeAt(pos);
+
+	    if (!isSpace(ch)) {
+	      // " 1.test " - is not a list item
+	      return -1;
+	    }
 	  }
 	  return pos;
 	}
@@ -5866,13 +5919,18 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	module.exports = function list(state, startLine, endLine, silent) {
 	  var nextLine,
+	      initial,
+	      offset,
 	      indent,
 	      oldTShift,
 	      oldIndent,
+	      oldLIndent,
 	      oldTight,
 	      oldParentType,
 	      start,
 	      posAfterMarker,
+	      ch,
+	      pos,
 	      max,
 	      indentAfterMarker,
 	      markerValue,
@@ -5931,14 +5989,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	  terminatorRules = state.md.block.ruler.getRules('list');
 
 	  while (nextLine < endLine) {
-	    contentStart = state.skipSpaces(posAfterMarker);
+	    pos = posAfterMarker;
 	    max = state.eMarks[nextLine];
+
+	    initial = offset = state.sCount[nextLine] + posAfterMarker - (state.bMarks[startLine] + state.tShift[startLine]);
+
+	    while (pos < max) {
+	      ch = state.src.charCodeAt(pos);
+
+	      if (isSpace(ch)) {
+	        if (ch === 0x09) {
+	          offset += 4 - offset % 4;
+	        } else {
+	          offset++;
+	        }
+	      } else {
+	        break;
+	      }
+
+	      pos++;
+	    }
+
+	    contentStart = pos;
 
 	    if (contentStart >= max) {
 	      // trimming space in "-    \n  3" case, indent is 1 here
 	      indentAfterMarker = 1;
 	    } else {
-	      indentAfterMarker = contentStart - posAfterMarker;
+	      indentAfterMarker = offset - initial;
 	    }
 
 	    // If we have more than 4 spaces, the indent is 1
@@ -5947,7 +6025,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // "  -  test"
 	    //  ^^^^^ - calculating total length of this thing
-	    indent = (posAfterMarker - state.bMarks[nextLine]) + indentAfterMarker;
+	    indent = initial + indentAfterMarker;
 
 	    // Run subparser & write tokens
 	    token        = state.push('list_item_open', 'li', 1);
@@ -5957,11 +6035,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    oldIndent = state.blkIndent;
 	    oldTight = state.tight;
 	    oldTShift = state.tShift[startLine];
+	    oldLIndent = state.sCount[startLine];
 	    oldParentType = state.parentType;
-	    state.tShift[startLine] = contentStart - state.bMarks[startLine];
 	    state.blkIndent = indent;
 	    state.tight = true;
 	    state.parentType = 'list';
+	    state.tShift[startLine] = contentStart - state.bMarks[startLine];
+	    state.sCount[startLine] = offset;
 
 	    state.md.block.tokenize(state, startLine, endLine, true);
 
@@ -5975,6 +6055,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    state.blkIndent = oldIndent;
 	    state.tShift[startLine] = oldTShift;
+	    state.sCount[startLine] = oldLIndent;
 	    state.tight = oldTight;
 	    state.parentType = oldParentType;
 
@@ -5994,7 +6075,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    //
 	    // Try to check if list is terminated or continued.
 	    //
-	    if (state.tShift[nextLine] < state.blkIndent) { break; }
+	    if (state.sCount[nextLine] < state.blkIndent) { break; }
 
 	    // fail if terminating block found
 	    terminate = false;
@@ -6048,6 +6129,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var parseLinkDestination = __webpack_require__(20);
 	var parseLinkTitle       = __webpack_require__(21);
 	var normalizeReference   = __webpack_require__(4).normalizeReference;
+	var isSpace              = __webpack_require__(4).isSpace;
 
 
 	module.exports = function reference(state, startLine, _endLine, silent) {
@@ -6092,10 +6174,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  for (; nextLine < endLine && !state.isEmpty(nextLine); nextLine++) {
 	    // this would be a code block normally, but after paragraph
 	    // it's considered a lazy continuation regardless of what's there
-	    if (state.tShift[nextLine] - state.blkIndent > 3) { continue; }
+	    if (state.sCount[nextLine] - state.blkIndent > 3) { continue; }
 
 	    // quirk for blockquotes, this line should already be checked by that rule
-	    if (state.tShift[nextLine] < 0) { continue; }
+	    if (state.sCount[nextLine] < 0) { continue; }
 
 	    // Some tags can terminate paragraph without empty line.
 	    terminate = false;
@@ -6136,7 +6218,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    ch = str.charCodeAt(pos);
 	    if (ch === 0x0A) {
 	      lines++;
-	    } else if (ch === 0x20) {
+	    } else if (isSpace(ch)) {
 	      /*eslint no-empty:0*/
 	    } else {
 	      break;
@@ -6165,7 +6247,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    ch = str.charCodeAt(pos);
 	    if (ch === 0x0A) {
 	      lines++;
-	    } else if (ch === 0x20) {
+	    } else if (isSpace(ch)) {
 	      /*eslint no-empty:0*/
 	    } else {
 	      break;
@@ -6186,7 +6268,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 
 	  // skip trailing spaces until the rest of the line
-	  while (pos < max && str.charCodeAt(pos) === 0x20/* space */) { pos++; }
+	  while (pos < max) {
+	    ch = str.charCodeAt(pos);
+	    if (!isSpace(ch)) { break; }
+	    pos++;
+	  }
 
 	  if (pos < max && str.charCodeAt(pos) !== 0x0A) {
 	    if (title) {
@@ -6195,7 +6281,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      title = '';
 	      pos = destEndPos;
 	      lines = destEndLineNo;
-	      while (pos < max && str.charCodeAt(pos) === 0x20/* space */) { pos++; }
+	      while (pos < max) {
+	        ch = str.charCodeAt(pos);
+	        if (!isSpace(ch)) { break; }
+	        pos++;
+	      }
 	    }
 	  }
 
@@ -6228,11 +6318,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 40 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// heading (#, ##, ...)
 
 	'use strict';
+
+	var isSpace = __webpack_require__(4).isSpace;
 
 
 	module.exports = function heading(state, startLine, endLine, silent) {
@@ -6258,9 +6350,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  // Let's cut tails like '    ###  ' from the end of string
 
-	  max = state.skipCharsBack(max, 0x20, pos); // space
+	  max = state.skipSpacesBack(max, pos);
 	  tmp = state.skipCharsBack(max, 0x23, pos); // #
-	  if (tmp > pos && state.src.charCodeAt(tmp - 1) === 0x20/* space */) {
+	  if (tmp > pos && isSpace(state.src.charCodeAt(tmp - 1))) {
 	    max = tmp;
 	  }
 
@@ -6296,11 +6388,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      next = startLine + 1;
 
 	  if (next >= endLine) { return false; }
-	  if (state.tShift[next] < state.blkIndent) { return false; }
+	  if (state.sCount[next] < state.blkIndent) { return false; }
 
 	  // Scan next line
 
-	  if (state.tShift[next] - state.blkIndent > 3) { return false; }
+	  if (state.sCount[next] - state.blkIndent > 3) { return false; }
 
 	  pos = state.bMarks[next] + state.tShift[next];
 	  max = state.eMarks[next];
@@ -6392,7 +6484,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // Let's roll down till block end.
 	  if (!HTML_SEQUENCES[i][1].test(lineText)) {
 	    for (; nextLine < endLine; nextLine++) {
-	      if (state.tShift[nextLine] < state.blkIndent) { break; }
+	      if (state.sCount[nextLine] < state.blkIndent) { break; }
 
 	      pos = state.bMarks[nextLine] + state.tShift[nextLine];
 	      max = state.eMarks[nextLine];
@@ -6456,6 +6548,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  'header',
 	  'hr',
 	  'html',
+	  'iframe',
 	  'legend',
 	  'li',
 	  'link',
@@ -6590,7 +6683,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  nextLine = startLine + 1;
 
-	  if (state.tShift[nextLine] < state.blkIndent) { return false; }
+	  if (state.sCount[nextLine] < state.blkIndent) { return false; }
 
 	  // first character of the second line should be '|' or '-'
 
@@ -6665,7 +6758,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  token.map = tbodyLines = [ startLine + 2, 0 ];
 
 	  for (nextLine = startLine + 2; nextLine < endLine; nextLine++) {
-	    if (state.tShift[nextLine] < state.blkIndent) { break; }
+	    if (state.sCount[nextLine] < state.blkIndent) { break; }
 
 	    lineText = getLine(state, nextLine).trim();
 	    if (lineText.indexOf('|') === -1) { break; }
@@ -6717,10 +6810,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  for (; nextLine < endLine && !state.isEmpty(nextLine); nextLine++) {
 	    // this would be a code block normally, but after paragraph
 	    // it's considered a lazy continuation regardless of what's there
-	    if (state.tShift[nextLine] - state.blkIndent > 3) { continue; }
+	    if (state.sCount[nextLine] - state.blkIndent > 3) { continue; }
 
 	    // quirk for blockquotes, this line should already be checked by that rule
-	    if (state.tShift[nextLine] < 0) { continue; }
+	    if (state.sCount[nextLine] < 0) { continue; }
 
 	    // Some tags can terminate paragraph without empty line.
 	    terminate = false;
@@ -6760,10 +6853,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 	var Token = __webpack_require__(32);
+	var isSpace = __webpack_require__(4).isSpace;
 
 
 	function StateBlock(src, md, env, tokens) {
-	  var ch, s, start, pos, len, indent, indent_found;
+	  var ch, s, start, pos, len, indent, offset, indent_found;
 
 	  this.src = src;
 
@@ -6780,7 +6874,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  this.bMarks = [];  // line begin offsets for fast jumps
 	  this.eMarks = [];  // line end offsets for fast jumps
-	  this.tShift = [];  // indent for each line
+	  this.tShift = [];  // offsets of the first non-space characters (tabs not expanded)
+	  this.sCount = [];  // indents for each line (tabs expanded)
 
 	  // block parser variables
 	  this.blkIndent  = 0; // required block content indent
@@ -6799,15 +6894,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // Create caches
 	  // Generate markers.
 	  s = this.src;
-	  indent = 0;
 	  indent_found = false;
 
-	  for (start = pos = indent = 0, len = s.length; pos < len; pos++) {
+	  for (start = pos = indent = offset = 0, len = s.length; pos < len; pos++) {
 	    ch = s.charCodeAt(pos);
 
 	    if (!indent_found) {
-	      if (ch === 0x20/* space */) {
+	      if (isSpace(ch)) {
 	        indent++;
+
+	        if (ch === 0x09) {
+	          offset += 4 - offset % 4;
+	        } else {
+	          offset++;
+	        }
 	        continue;
 	      } else {
 	        indent_found = true;
@@ -6819,9 +6919,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.bMarks.push(start);
 	      this.eMarks.push(pos);
 	      this.tShift.push(indent);
+	      this.sCount.push(offset);
 
 	      indent_found = false;
 	      indent = 0;
+	      offset = 0;
 	      start = pos + 1;
 	    }
 	  }
@@ -6830,6 +6932,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  this.bMarks.push(s.length);
 	  this.eMarks.push(s.length);
 	  this.tShift.push(0);
+	  this.sCount.push(0);
 
 	  this.lineMax = this.bMarks.length - 1; // don't count last fake line
 	}
@@ -6863,8 +6966,21 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	// Skip spaces from given position.
 	StateBlock.prototype.skipSpaces = function skipSpaces(pos) {
+	  var ch;
+
 	  for (var max = this.src.length; pos < max; pos++) {
-	    if (this.src.charCodeAt(pos) !== 0x20/* space */) { break; }
+	    ch = this.src.charCodeAt(pos);
+	    if (!isSpace(ch)) { break; }
+	  }
+	  return pos;
+	};
+
+	// Skip spaces from given position in reverse.
+	StateBlock.prototype.skipSpacesBack = function skipSpacesBack(pos, min) {
+	  if (pos <= min) { return pos; }
+
+	  while (pos > min) {
+	    if (!isSpace(this.src.charCodeAt(--pos))) { return pos + 1; }
 	  }
 	  return pos;
 	};
@@ -6889,34 +7005,43 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	// cut lines range from source.
 	StateBlock.prototype.getLines = function getLines(begin, end, indent, keepLastLF) {
-	  var i, first, last, queue, shift,
+	  var i, lineIndent, ch, first, last, queue, lineStart,
 	      line = begin;
 
 	  if (begin >= end) {
 	    return '';
 	  }
 
-	  // Opt: don't use push queue for single line;
-	  if (line + 1 === end) {
-	    first = this.bMarks[line] + Math.min(this.tShift[line], indent);
-	    last = this.eMarks[end - 1] + (keepLastLF ? 1 : 0);
-	    return this.src.slice(first, last);
-	  }
-
 	  queue = new Array(end - begin);
 
 	  for (i = 0; line < end; line++, i++) {
-	    shift = this.tShift[line];
-	    if (shift > indent) { shift = indent; }
-	    if (shift < 0) { shift = 0; }
-
-	    first = this.bMarks[line] + shift;
+	    lineIndent = 0;
+	    lineStart = first = this.bMarks[line];
 
 	    if (line + 1 < end || keepLastLF) {
 	      // No need for bounds check because we have fake entry on tail.
 	      last = this.eMarks[line] + 1;
 	    } else {
 	      last = this.eMarks[line];
+	    }
+
+	    while (first < last && lineIndent < indent) {
+	      ch = this.src.charCodeAt(first);
+
+	      if (isSpace(ch)) {
+	        if (ch === 0x09) {
+	          lineIndent += 4 - lineIndent % 4;
+	        } else {
+	          lineIndent++;
+	        }
+	      } else if (first - lineStart < this.tShift[line]) {
+	        // patched tShift masked characters to look like spaces (blockquotes, list markers)
+	        lineIndent++;
+	      } else {
+	        break;
+	      }
+
+	      first++;
 	    }
 
 	    queue[i] = this.src.slice(first, last);
@@ -6955,8 +7080,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  [ 'newline',         __webpack_require__(50) ],
 	  [ 'escape',          __webpack_require__(51) ],
 	  [ 'backticks',       __webpack_require__(52) ],
-	  [ 'strikethrough',   __webpack_require__(53) ],
-	  [ 'emphasis',        __webpack_require__(54) ],
+	  [ 'strikethrough',   __webpack_require__(53).tokenize ],
+	  [ 'emphasis',        __webpack_require__(54).tokenize ],
 	  [ 'link',            __webpack_require__(55) ],
 	  [ 'image',           __webpack_require__(56) ],
 	  [ 'autolink',        __webpack_require__(57) ],
@@ -6964,11 +7089,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	  [ 'entity',          __webpack_require__(60) ]
 	];
 
+	var _rules2 = [
+	  [ 'balance_pairs',   __webpack_require__(61) ],
+	  [ 'strikethrough',   __webpack_require__(53).postProcess ],
+	  [ 'emphasis',        __webpack_require__(54).postProcess ],
+	  [ 'text_collapse',   __webpack_require__(62) ]
+	];
+
 
 	/**
 	 * new ParserInline()
 	 **/
 	function ParserInline() {
+	  var i;
+
 	  /**
 	   * ParserInline#ruler -> Ruler
 	   *
@@ -6976,8 +7110,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	   **/
 	  this.ruler = new Ruler();
 
-	  for (var i = 0; i < _rules.length; i++) {
+	  for (i = 0; i < _rules.length; i++) {
 	    this.ruler.push(_rules[i][0], _rules[i][1]);
+	  }
+
+	  /**
+	   * ParserInline#ruler2 -> Ruler
+	   *
+	   * [[Ruler]] instance. Second ruler used for post-processing
+	   * (e.g. in emphasis-like rules).
+	   **/
+	  this.ruler2 = new Ruler();
+
+	  for (i = 0; i < _rules2.length; i++) {
+	    this.ruler2.push(_rules2[i][0], _rules2[i][1]);
 	  }
 	}
 
@@ -7057,13 +7203,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * Process input string and push inline tokens into `outTokens`
 	 **/
 	ParserInline.prototype.parse = function (str, md, env, outTokens) {
+	  var i, rules, len;
 	  var state = new this.State(str, md, env, outTokens);
 
 	  this.tokenize(state);
+
+	  rules = this.ruler2.getRules('');
+	  len = rules.length;
+
+	  for (i = 0; i < len; i++) {
+	    rules[i](state);
+	  }
 	};
 
 
-	ParserInline.prototype.State = __webpack_require__(61);
+	ParserInline.prototype.State = __webpack_require__(63);
 
 
 	module.exports = ParserInline;
@@ -7211,11 +7365,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 51 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// Proceess escaped chars and hardbreaks
 
 	'use strict';
+
+	var isSpace = __webpack_require__(4).isSpace;
 
 	var ESCAPED = [];
 
@@ -7248,7 +7404,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      pos++;
 	      // skip leading whitespaces from next line
-	      while (pos < max && state.src.charCodeAt(pos) === 0x20) { pos++; }
+	      while (pos < max) {
+	        ch = state.src.charCodeAt(pos);
+	        if (!isSpace(ch)) { break; }
+	        pos++;
+	      }
 
 	      state.pos = pos;
 	      return true;
@@ -7312,327 +7472,253 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 53 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	// ~~strike through~~
 	//
 	'use strict';
 
 
-	var isWhiteSpace   = __webpack_require__(4).isWhiteSpace;
-	var isPunctChar    = __webpack_require__(4).isPunctChar;
-	var isMdAsciiPunct = __webpack_require__(4).isMdAsciiPunct;
-
-
-	// parse sequence of markers,
-	// "start" should point at a valid marker
-	function scanDelims(state, start) {
-	  var pos = start, lastChar, nextChar, count,
-	      isLastWhiteSpace, isLastPunctChar,
-	      isNextWhiteSpace, isNextPunctChar,
-	      can_open = true,
-	      can_close = true,
-	      max = state.posMax,
-	      marker = state.src.charCodeAt(start);
-
-	  // treat beginning of the line as a whitespace
-	  lastChar = start > 0 ? state.src.charCodeAt(start - 1) : 0x20;
-
-	  while (pos < max && state.src.charCodeAt(pos) === marker) { pos++; }
-
-	  if (pos >= max) {
-	    can_open = false;
-	  }
-
-	  count = pos - start;
-
-	  // treat end of the line as a whitespace
-	  nextChar = pos < max ? state.src.charCodeAt(pos) : 0x20;
-
-	  isLastPunctChar = isMdAsciiPunct(lastChar) || isPunctChar(String.fromCharCode(lastChar));
-	  isNextPunctChar = isMdAsciiPunct(nextChar) || isPunctChar(String.fromCharCode(nextChar));
-
-	  isLastWhiteSpace = isWhiteSpace(lastChar);
-	  isNextWhiteSpace = isWhiteSpace(nextChar);
-
-	  if (isNextWhiteSpace) {
-	    can_open = false;
-	  } else if (isNextPunctChar) {
-	    if (!(isLastWhiteSpace || isLastPunctChar)) {
-	      can_open = false;
-	    }
-	  }
-
-	  if (isLastWhiteSpace) {
-	    can_close = false;
-	  } else if (isLastPunctChar) {
-	    if (!(isNextWhiteSpace || isNextPunctChar)) {
-	      can_close = false;
-	    }
-	  }
-
-	  return {
-	    can_open: can_open,
-	    can_close: can_close,
-	    delims: count
-	  };
-	}
-
-
-	module.exports = function strikethrough(state, silent) {
-	  var startCount,
-	      count,
-	      tagCount,
-	      found,
-	      stack,
-	      res,
-	      token,
-	      max = state.posMax,
+	// Insert each marker as a separate text token, and add it to delimiter list
+	//
+	module.exports.tokenize = function strikethrough(state, silent) {
+	  var i, scanned, token, len, ch,
 	      start = state.pos,
 	      marker = state.src.charCodeAt(start);
 
-	  if (marker !== 0x7E/* ~ */) { return false; }
-	  if (silent) { return false; } // don't run any pairs in validation mode
+	  if (silent) { return false; }
 
-	  res = scanDelims(state, start);
-	  startCount = res.delims;
-	  if (!res.can_open) {
-	    state.pos += startCount;
-	    // Earlier we checked !silent, but this implementation does not need it
-	    state.pending += state.src.slice(start, state.pos);
-	    return true;
+	  if (marker !== 0x7E/* ~ */) { return false; }
+
+	  scanned = state.scanDelims(state.pos, true);
+	  len = scanned.length;
+	  ch = String.fromCharCode(marker);
+
+	  if (len < 2) { return false; }
+
+	  if (len % 2) {
+	    token         = state.push('text', '', 0);
+	    token.content = ch;
+	    len--;
 	  }
 
-	  stack = Math.floor(startCount / 2);
-	  if (stack <= 0) { return false; }
-	  state.pos = start + startCount;
+	  for (i = 0; i < len; i += 2) {
+	    token         = state.push('text', '', 0);
+	    token.content = ch + ch;
 
-	  while (state.pos < max) {
-	    if (state.src.charCodeAt(state.pos) === marker) {
-	      res = scanDelims(state, state.pos);
-	      count = res.delims;
-	      tagCount = Math.floor(count / 2);
-	      if (res.can_close) {
-	        if (tagCount >= stack) {
-	          state.pos += count - 2;
-	          found = true;
-	          break;
-	        }
-	        stack -= tagCount;
-	        state.pos += count;
-	        continue;
-	      }
+	    state.delimiters.push({
+	      marker: marker,
+	      jump:   i,
+	      token:  state.tokens.length - 1,
+	      level:  state.level,
+	      end:    -1,
+	      open:   scanned.can_open,
+	      close:  scanned.can_close
+	    });
+	  }
 
-	      if (res.can_open) { stack += tagCount; }
-	      state.pos += count;
+	  state.pos += scanned.length;
+
+	  return true;
+	};
+
+
+	// Walk through delimiter list and replace text tokens with tags
+	//
+	module.exports.postProcess = function strikethrough(state) {
+	  var i, j,
+	      startDelim,
+	      endDelim,
+	      token,
+	      loneMarkers = [],
+	      delimiters = state.delimiters,
+	      max = state.delimiters.length;
+
+	  for (i = 0; i < max; i++) {
+	    startDelim = delimiters[i];
+
+	    if (startDelim.marker !== 0x7E/* ~ */) {
 	      continue;
 	    }
 
-	    state.md.inline.skipToken(state);
+	    if (startDelim.end === -1) {
+	      continue;
+	    }
+
+	    endDelim = delimiters[startDelim.end];
+
+	    token         = state.tokens[startDelim.token];
+	    token.type    = 's_open';
+	    token.tag     = 's';
+	    token.nesting = 1;
+	    token.markup  = '~~';
+	    token.content = '';
+
+	    token         = state.tokens[endDelim.token];
+	    token.type    = 's_close';
+	    token.tag     = 's';
+	    token.nesting = -1;
+	    token.markup  = '~~';
+	    token.content = '';
+
+	    if (state.tokens[endDelim.token - 1].type === 'text' &&
+	        state.tokens[endDelim.token - 1].content === '~') {
+
+	      loneMarkers.push(endDelim.token - 1);
+	    }
 	  }
 
-	  if (!found) {
-	    // parser failed to find ending tag, so it's not valid emphasis
-	    state.pos = start;
-	    return false;
+	  // If a marker sequence has an odd number of characters, it's splitted
+	  // like this: `~~~~~` -> `~` + `~~` + `~~`, leaving one marker at the
+	  // start of the sequence.
+	  //
+	  // So, we have to move all those markers after subsequent s_close tags.
+	  //
+	  while (loneMarkers.length) {
+	    i = loneMarkers.pop();
+	    j = i + 1;
+
+	    while (j < state.tokens.length && state.tokens[j].type === 's_close') {
+	      j++;
+	    }
+
+	    j--;
+
+	    if (i !== j) {
+	      token = state.tokens[j];
+	      state.tokens[j] = state.tokens[i];
+	      state.tokens[i] = token;
+	    }
 	  }
-
-	  // found!
-	  state.posMax = state.pos;
-	  state.pos = start + 2;
-
-	  // Earlier we checked !silent, but this implementation does not need it
-	  token        = state.push('s_open', 's', 1);
-	  token.markup = '~~';
-
-	  state.md.inline.tokenize(state);
-
-	  token        = state.push('s_close', 's', -1);
-	  token.markup = '~~';
-
-	  state.pos = state.posMax + 2;
-	  state.posMax = max;
-	  return true;
 	};
 
 
 /***/ },
 /* 54 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	// Process *this* and _that_
 	//
 	'use strict';
 
 
-	var isWhiteSpace   = __webpack_require__(4).isWhiteSpace;
-	var isPunctChar    = __webpack_require__(4).isPunctChar;
-	var isMdAsciiPunct = __webpack_require__(4).isMdAsciiPunct;
-
-
-	// parse sequence of emphasis markers,
-	// "start" should point at a valid marker
-	function scanDelims(state, start) {
-	  var pos = start, lastChar, nextChar, count, can_open, can_close,
-	      isLastWhiteSpace, isLastPunctChar,
-	      isNextWhiteSpace, isNextPunctChar,
-	      left_flanking = true,
-	      right_flanking = true,
-	      max = state.posMax,
-	      marker = state.src.charCodeAt(start);
-
-	  // treat beginning of the line as a whitespace
-	  lastChar = start > 0 ? state.src.charCodeAt(start - 1) : 0x20;
-
-	  while (pos < max && state.src.charCodeAt(pos) === marker) { pos++; }
-
-	  count = pos - start;
-
-	  // treat end of the line as a whitespace
-	  nextChar = pos < max ? state.src.charCodeAt(pos) : 0x20;
-
-	  isLastPunctChar = isMdAsciiPunct(lastChar) || isPunctChar(String.fromCharCode(lastChar));
-	  isNextPunctChar = isMdAsciiPunct(nextChar) || isPunctChar(String.fromCharCode(nextChar));
-
-	  isLastWhiteSpace = isWhiteSpace(lastChar);
-	  isNextWhiteSpace = isWhiteSpace(nextChar);
-
-	  if (isNextWhiteSpace) {
-	    left_flanking = false;
-	  } else if (isNextPunctChar) {
-	    if (!(isLastWhiteSpace || isLastPunctChar)) {
-	      left_flanking = false;
-	    }
-	  }
-
-	  if (isLastWhiteSpace) {
-	    right_flanking = false;
-	  } else if (isLastPunctChar) {
-	    if (!(isNextWhiteSpace || isNextPunctChar)) {
-	      right_flanking = false;
-	    }
-	  }
-
-	  if (marker === 0x5F /* _ */) {
-	    // "_" inside a word can neither open nor close an emphasis
-	    can_open  = left_flanking  && (!right_flanking || isLastPunctChar);
-	    can_close = right_flanking && (!left_flanking  || isNextPunctChar);
-	  } else {
-	    can_open  = left_flanking;
-	    can_close = right_flanking;
-	  }
-
-	  return {
-	    can_open: can_open,
-	    can_close: can_close,
-	    delims: count
-	  };
-	}
-
-	module.exports = function emphasis(state, silent) {
-	  var startCount,
-	      count,
-	      found,
-	      oldCount,
-	      newCount,
-	      stack,
-	      res,
-	      token,
-	      max = state.posMax,
+	// Insert each marker as a separate text token, and add it to delimiter list
+	//
+	module.exports.tokenize = function emphasis(state, silent) {
+	  var i, scanned, token,
 	      start = state.pos,
 	      marker = state.src.charCodeAt(start);
 
-	  if (marker !== 0x5F/* _ */ && marker !== 0x2A /* * */) { return false; }
-	  if (silent) { return false; } // don't run any pairs in validation mode
+	  if (silent) { return false; }
 
-	  res = scanDelims(state, start);
-	  startCount = res.delims;
-	  if (!res.can_open) {
-	    state.pos += startCount;
-	    // Earlier we checked !silent, but this implementation does not need it
-	    state.pending += state.src.slice(start, state.pos);
-	    return true;
+	  if (marker !== 0x5F /* _ */ && marker !== 0x2A /* * */) { return false; }
+
+	  scanned = state.scanDelims(state.pos, marker === 0x2A);
+
+	  for (i = 0; i < scanned.length; i++) {
+	    token         = state.push('text', '', 0);
+	    token.content = String.fromCharCode(marker);
+
+	    state.delimiters.push({
+	      // Char code of the starting marker (number).
+	      //
+	      marker: marker,
+
+	      // An amount of characters before this one that's equivalent to
+	      // current one. In plain English: if this delimiter does not open
+	      // an emphasis, neither do previous `jump` characters.
+	      //
+	      // Used to skip sequences like "*****" in one step, for 1st asterisk
+	      // value will be 0, for 2nd it's 1 and so on.
+	      //
+	      jump:   i,
+
+	      // A position of the token this delimiter corresponds to.
+	      //
+	      token:  state.tokens.length - 1,
+
+	      // Token level.
+	      //
+	      level:  state.level,
+
+	      // If this delimiter is matched as a valid opener, `end` will be
+	      // equal to its position, otherwise it's `-1`.
+	      //
+	      end:    -1,
+
+	      // Boolean flags that determine if this delimiter could open or close
+	      // an emphasis.
+	      //
+	      open:   scanned.can_open,
+	      close:  scanned.can_close
+	    });
 	  }
 
-	  state.pos = start + startCount;
-	  stack = [ startCount ];
+	  state.pos += scanned.length;
 
-	  while (state.pos < max) {
-	    if (state.src.charCodeAt(state.pos) === marker) {
-	      res = scanDelims(state, state.pos);
-	      count = res.delims;
-	      if (res.can_close) {
-	        oldCount = stack.pop();
-	        newCount = count;
+	  return true;
+	};
 
-	        while (oldCount !== newCount) {
-	          if (newCount < oldCount) {
-	            stack.push(oldCount - newCount);
-	            break;
-	          }
 
-	          // assert(newCount > oldCount)
-	          newCount -= oldCount;
+	// Walk through delimiter list and replace text tokens with tags
+	//
+	module.exports.postProcess = function emphasis(state) {
+	  var i,
+	      startDelim,
+	      endDelim,
+	      token,
+	      ch,
+	      isStrong,
+	      delimiters = state.delimiters,
+	      max = state.delimiters.length;
 
-	          if (stack.length === 0) { break; }
-	          state.pos += oldCount;
-	          oldCount = stack.pop();
-	        }
+	  for (i = 0; i < max; i++) {
+	    startDelim = delimiters[i];
 
-	        if (stack.length === 0) {
-	          startCount = oldCount;
-	          found = true;
-	          break;
-	        }
-	        state.pos += count;
-	        continue;
-	      }
-
-	      if (res.can_open) { stack.push(count); }
-	      state.pos += count;
+	    if (startDelim.marker !== 0x5F/* _ */ && startDelim.marker !== 0x2A/* * */) {
 	      continue;
 	    }
 
-	    state.md.inline.skipToken(state);
+	    // Process only opening markers
+	    if (startDelim.end === -1) {
+	      continue;
+	    }
+
+	    endDelim = delimiters[startDelim.end];
+
+	    // If the next delimiter has the same marker and is adjacent to this one,
+	    // merge those into one strong delimiter.
+	    //
+	    // `<em><em>whatever</em></em>` -> `<strong>whatever</strong>`
+	    //
+	    isStrong = i + 1 < max &&
+	               delimiters[i + 1].end === startDelim.end - 1 &&
+	               delimiters[i + 1].token === startDelim.token + 1 &&
+	               delimiters[startDelim.end - 1].token === endDelim.token - 1 &&
+	               delimiters[i + 1].marker === startDelim.marker;
+
+	    ch = String.fromCharCode(startDelim.marker);
+
+	    token         = state.tokens[startDelim.token];
+	    token.type    = isStrong ? 'strong_open' : 'em_open';
+	    token.tag     = isStrong ? 'strong' : 'em';
+	    token.nesting = 1;
+	    token.markup  = isStrong ? ch + ch : ch;
+	    token.content = '';
+
+	    token         = state.tokens[endDelim.token];
+	    token.type    = isStrong ? 'strong_close' : 'em_close';
+	    token.tag     = isStrong ? 'strong' : 'em';
+	    token.nesting = -1;
+	    token.markup  = isStrong ? ch + ch : ch;
+	    token.content = '';
+
+	    if (isStrong) {
+	      state.tokens[delimiters[i + 1].token].content = '';
+	      state.tokens[delimiters[startDelim.end - 1].token].content = '';
+	      i++;
+	    }
 	  }
-
-	  if (!found) {
-	    // parser failed to find ending tag, so it's not valid emphasis
-	    state.pos = start;
-	    return false;
-	  }
-
-	  // found!
-	  state.posMax = state.pos;
-	  state.pos = start + startCount;
-
-	  // Earlier we checked !silent, but this implementation does not need it
-
-	  // we have `startCount` starting and ending markers,
-	  // now trying to serialize them into tokens
-	  for (count = startCount; count > 1; count -= 2) {
-	    token        = state.push('strong_open', 'strong', 1);
-	    token.markup = String.fromCharCode(marker) + String.fromCharCode(marker);
-	  }
-	  if (count % 2) {
-	    token        = state.push('em_open', 'em', 1);
-	    token.markup = String.fromCharCode(marker);
-	  }
-
-	  state.md.inline.tokenize(state);
-
-	  if (count % 2) {
-	    token        = state.push('em_close', 'em', -1);
-	    token.markup = String.fromCharCode(marker);
-	  }
-	  for (count = startCount; count > 1; count -= 2) {
-	    token        = state.push('strong_close', 'strong', -1);
-	    token.markup = String.fromCharCode(marker) + String.fromCharCode(marker);
-	  }
-
-	  state.pos = state.posMax + startCount;
-	  state.posMax = max;
-	  return true;
 	};
 
 
@@ -7648,6 +7734,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var parseLinkDestination = __webpack_require__(20);
 	var parseLinkTitle       = __webpack_require__(21);
 	var normalizeReference   = __webpack_require__(4).normalizeReference;
+	var isSpace              = __webpack_require__(4).isSpace;
 
 
 	module.exports = function link(state, silent) {
@@ -7685,7 +7772,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    pos++;
 	    for (; pos < max; pos++) {
 	      code = state.src.charCodeAt(pos);
-	      if (code !== 0x20 && code !== 0x0A) { break; }
+	      if (!isSpace(code) && code !== 0x0A) { break; }
 	    }
 	    if (pos >= max) { return false; }
 
@@ -7707,7 +7794,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    start = pos;
 	    for (; pos < max; pos++) {
 	      code = state.src.charCodeAt(pos);
-	      if (code !== 0x20 && code !== 0x0A) { break; }
+	      if (!isSpace(code) && code !== 0x0A) { break; }
 	    }
 
 	    // [link](  <href>  "title"  )
@@ -7721,7 +7808,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      //                         ^^ skipping these spaces
 	      for (; pos < max; pos++) {
 	        code = state.src.charCodeAt(pos);
-	        if (code !== 0x20 && code !== 0x0A) { break; }
+	        if (!isSpace(code) && code !== 0x0A) { break; }
 	      }
 	    } else {
 	      title = '';
@@ -7742,7 +7829,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    //      ^^ optional whitespace (can include newlines)
 	    for (; pos < max; pos++) {
 	      code = state.src.charCodeAt(pos);
-	      if (code !== 0x20 && code !== 0x0A) { break; }
+	      if (!isSpace(code) && code !== 0x0A) { break; }
 	    }
 
 	    if (pos < max && state.src.charCodeAt(pos) === 0x5B/* [ */) {
@@ -7807,6 +7894,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var parseLinkDestination = __webpack_require__(20);
 	var parseLinkTitle       = __webpack_require__(21);
 	var normalizeReference   = __webpack_require__(4).normalizeReference;
+	var isSpace              = __webpack_require__(4).isSpace;
 
 
 	module.exports = function image(state, silent) {
@@ -7846,7 +7934,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    pos++;
 	    for (; pos < max; pos++) {
 	      code = state.src.charCodeAt(pos);
-	      if (code !== 0x20 && code !== 0x0A) { break; }
+	      if (!isSpace(code) && code !== 0x0A) { break; }
 	    }
 	    if (pos >= max) { return false; }
 
@@ -7868,7 +7956,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    start = pos;
 	    for (; pos < max; pos++) {
 	      code = state.src.charCodeAt(pos);
-	      if (code !== 0x20 && code !== 0x0A) { break; }
+	      if (!isSpace(code) && code !== 0x0A) { break; }
 	    }
 
 	    // [link](  <href>  "title"  )
@@ -7882,7 +7970,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      //                         ^^ skipping these spaces
 	      for (; pos < max; pos++) {
 	        code = state.src.charCodeAt(pos);
-	        if (code !== 0x20 && code !== 0x0A) { break; }
+	        if (!isSpace(code) && code !== 0x0A) { break; }
 	      }
 	    } else {
 	      title = '';
@@ -7903,7 +7991,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    //      ^^ optional whitespace (can include newlines)
 	    for (; pos < max; pos++) {
 	      code = state.src.charCodeAt(pos);
-	      if (code !== 0x20 && code !== 0x0A) { break; }
+	      if (!isSpace(code) && code !== 0x0A) { break; }
 	    }
 
 	    if (pos < max && state.src.charCodeAt(pos) === 0x5B/* [ */) {
@@ -7936,16 +8024,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // so all that's left to do is to call tokenizer.
 	  //
 	  if (!silent) {
-	    state.pos = labelStart;
-	    state.posMax = labelEnd;
-
-	    var newState = new state.md.inline.State(
+	    state.md.inline.parse(
 	      state.src.slice(labelStart, labelEnd),
 	      state.md,
 	      state.env,
 	      tokens = []
 	    );
-	    newState.md.inline.tokenize(newState);
 
 	    token          = state.push('image', 'img', 0);
 	    token.attrs    = attrs = [ [ 'src', href ], [ 'alt', '' ] ];
@@ -8326,6 +8410,87 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 61 */
+/***/ function(module, exports) {
+
+	// For each opening emphasis-like marker find a matching closing one
+	//
+	'use strict';
+
+
+	module.exports = function link_pairs(state) {
+	  var i, j, lastDelim, currDelim,
+	      delimiters = state.delimiters,
+	      max = state.delimiters.length;
+
+	  for (i = 0; i < max; i++) {
+	    lastDelim = delimiters[i];
+
+	    if (!lastDelim.close) { continue; }
+
+	    j = i - lastDelim.jump - 1;
+
+	    while (j >= 0) {
+	      currDelim = delimiters[j];
+
+	      if (currDelim.open &&
+	          currDelim.marker === lastDelim.marker &&
+	          currDelim.end < 0 &&
+	          currDelim.level === lastDelim.level) {
+
+	        lastDelim.jump = i - j;
+	        lastDelim.open = false;
+	        currDelim.end  = i;
+	        currDelim.jump = 0;
+	        break;
+	      }
+
+	      j -= currDelim.jump + 1;
+	    }
+	  }
+	};
+
+
+/***/ },
+/* 62 */
+/***/ function(module, exports) {
+
+	// Merge adjacent text nodes into one, and re-calculate all token levels
+	//
+	'use strict';
+
+
+	module.exports = function text_collapse(state) {
+	  var curr, last,
+	      level = 0,
+	      tokens = state.tokens,
+	      max = state.tokens.length;
+
+	  for (curr = last = 0; curr < max; curr++) {
+	    // re-calculate levels
+	    level += tokens[curr].nesting;
+	    tokens[curr].level = level;
+
+	    if (tokens[curr].type === 'text' &&
+	        curr + 1 < max &&
+	        tokens[curr + 1].type === 'text') {
+
+	      // collapse two adjacent text nodes
+	      tokens[curr + 1].content = tokens[curr].content + tokens[curr + 1].content;
+	    } else {
+	      if (curr !== last) { tokens[last] = tokens[curr]; }
+
+	      last++;
+	    }
+	  }
+
+	  if (curr !== last) {
+	    tokens.length = last;
+	  }
+	};
+
+
+/***/ },
+/* 63 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Inline parser state
@@ -8333,7 +8498,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 
-	var Token = __webpack_require__(32);
+	var Token          = __webpack_require__(32);
+	var isWhiteSpace   = __webpack_require__(4).isWhiteSpace;
+	var isPunctChar    = __webpack_require__(4).isPunctChar;
+	var isMdAsciiPunct = __webpack_require__(4).isMdAsciiPunct;
+
 
 	function StateInline(src, md, env, outTokens) {
 	  this.src = src;
@@ -8349,6 +8518,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  this.cache = {};        // Stores { start: end } pairs. Useful for backtrack
 	                          // optimization of pairs parse (emphasis, strikes).
+
+	  this.delimiters = [];   // Emphasis-like delimiters
 	}
 
 
@@ -8383,6 +8554,70 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return token;
 	};
 
+
+	// Scan a sequence of emphasis-like markers, and determine whether
+	// it can start an emphasis sequence or end an emphasis sequence.
+	//
+	//  - start - position to scan from (it should point at a valid marker);
+	//  - canSplitWord - determine if these markers can be found inside a word
+	//
+	StateInline.prototype.scanDelims = function (start, canSplitWord) {
+	  var pos = start, lastChar, nextChar, count, can_open, can_close,
+	      isLastWhiteSpace, isLastPunctChar,
+	      isNextWhiteSpace, isNextPunctChar,
+	      left_flanking = true,
+	      right_flanking = true,
+	      max = this.posMax,
+	      marker = this.src.charCodeAt(start);
+
+	  // treat beginning of the line as a whitespace
+	  lastChar = start > 0 ? this.src.charCodeAt(start - 1) : 0x20;
+
+	  while (pos < max && this.src.charCodeAt(pos) === marker) { pos++; }
+
+	  count = pos - start;
+
+	  // treat end of the line as a whitespace
+	  nextChar = pos < max ? this.src.charCodeAt(pos) : 0x20;
+
+	  isLastPunctChar = isMdAsciiPunct(lastChar) || isPunctChar(String.fromCharCode(lastChar));
+	  isNextPunctChar = isMdAsciiPunct(nextChar) || isPunctChar(String.fromCharCode(nextChar));
+
+	  isLastWhiteSpace = isWhiteSpace(lastChar);
+	  isNextWhiteSpace = isWhiteSpace(nextChar);
+
+	  if (isNextWhiteSpace) {
+	    left_flanking = false;
+	  } else if (isNextPunctChar) {
+	    if (!(isLastWhiteSpace || isLastPunctChar)) {
+	      left_flanking = false;
+	    }
+	  }
+
+	  if (isLastWhiteSpace) {
+	    right_flanking = false;
+	  } else if (isLastPunctChar) {
+	    if (!(isNextWhiteSpace || isNextPunctChar)) {
+	      right_flanking = false;
+	    }
+	  }
+
+	  if (!canSplitWord) {
+	    can_open  = left_flanking  && (!right_flanking || isLastPunctChar);
+	    can_close = right_flanking && (!left_flanking  || isNextPunctChar);
+	  } else {
+	    can_open  = left_flanking;
+	    can_close = right_flanking;
+	  }
+
+	  return {
+	    can_open:  can_open,
+	    can_close: can_close,
+	    length:    count
+	  };
+	};
+
+
 	// re-export Token class to use in block rules
 	StateInline.prototype.Token = Token;
 
@@ -8391,7 +8626,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 62 */
+/* 64 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -8536,7 +8771,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	function compile(self) {
 
 	  // Load & clone RE patterns.
-	  var re = self.re = assign({}, __webpack_require__(63));
+	  var re = self.re = assign({}, __webpack_require__(65));
 
 	  // Define dynamic patterns
 	  var tlds = self.__tlds__.slice();
@@ -9013,7 +9248,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 63 */
+/* 65 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -9179,7 +9414,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 64 */
+/* 66 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(module, global) {/*! https://mths.be/punycode v1.3.2 by @mathias */
@@ -9711,10 +9946,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	}(this));
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(65)(module), (function() { return this; }())))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(67)(module), (function() { return this; }())))
 
 /***/ },
-/* 65 */
+/* 67 */
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -9730,7 +9965,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 66 */
+/* 68 */
 /***/ function(module, exports) {
 
 	// markdown-it default options
@@ -9754,7 +9989,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    //
 	    // For example, you can use '«»„“' for Russian, '„“‚‘' for German,
 	    // and ['«\xA0', '\xA0»', '‹\xA0', '\xA0›'] for French (including nbsp).
-	    quotes: '\u201c\u201d\u2018\u2019' /* “”‘’ */,
+	    quotes: '\u201c\u201d\u2018\u2019', /* “”‘’ */
 
 	    // Highlighter function. Should return escaped HTML,
 	    // or '' if input not changed
@@ -9776,7 +10011,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 67 */
+/* 69 */
 /***/ function(module, exports) {
 
 	// "Zero" preset, with nothing enabled. Useful for manual configuring of simple
@@ -9801,7 +10036,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    //
 	    // For example, you can use '«»„“' for Russian, '„“‚‘' for German,
 	    // and ['«\xA0', '\xA0»', '‹\xA0', '\xA0›'] for French (including nbsp).
-	    quotes: '\u201c\u201d\u2018\u2019' /* “”‘’ */,
+	    quotes: '\u201c\u201d\u2018\u2019', /* “”‘’ */
 
 	    // Highlighter function. Should return escaped HTML,
 	    // or '' if input not changed
@@ -9832,6 +10067,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    inline: {
 	      rules: [
 	        'text'
+	      ],
+	      rules2: [
+	        'balance_pairs',
+	        'text_collapse'
 	      ]
 	    }
 	  }
@@ -9839,7 +10078,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 68 */
+/* 70 */
 /***/ function(module, exports) {
 
 	// Commonmark default options
@@ -9863,7 +10102,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    //
 	    // For example, you can use '«»„“' for Russian, '„“‚‘' for German,
 	    // and ['«\xA0', '\xA0»', '‹\xA0', '\xA0›'] for French (including nbsp).
-	    quotes: '\u201c\u201d\u2018\u2019' /* “”‘’ */,
+	    quotes: '\u201c\u201d\u2018\u2019', /* “”‘’ */
 
 	    // Highlighter function. Should return escaped HTML,
 	    // or '' if input not changed
@@ -9912,6 +10151,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        'link',
 	        'newline',
 	        'text'
+	      ],
+	      rules2: [
+	        'balance_pairs',
+	        'emphasis',
+	        'text_collapse'
 	      ]
 	    }
 	  }
@@ -9919,7 +10163,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 69 */
+/* 71 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -9988,7 +10232,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 70 */
+/* 72 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -10031,7 +10275,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 71 */
+/* 73 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//import MathJax from 'MathJax';
@@ -10043,7 +10287,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _markedJade = __webpack_require__(72);
+	var _markedJade = __webpack_require__(74);
 
 	var _markedJade2 = _interopRequireDefault(_markedJade);
 
@@ -10077,7 +10321,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 72 */
+/* 74 */
 /***/ function(module, exports) {
 
 	module.exports = "<div class=\"row\"><div class=\"col-sm-12\"><h3 ng-bind=\"marked.label\"></h3><ul class=\"nav nav-tabs\"><li ng-class=\"{'active': 'markdown'}[marked.mode]\"><button type=\"button\" ng-click=\"marked.mode='write'\" class=\"btn btn-default\">Markdown</button></li><li ng-class=\"{'active': 'preview'}[marked.mode]\"><button type=\"button\" ng-click=\"marked.mode='preview'\" class=\"btn btn-default\">Vorschau</button></li><li ng-class=\"{'active': 'both'}[marked.mode]\"><button type=\"button\" ng-click=\"marked.mode='both'\" class=\"btn btn-default\">nebeneinander</button></li></ul></div></div><div ng-switch=\"marked.mode\" class=\"row\"><div ng-switch-when=\"markdown\" class=\"col-sm-12\"><textarea ng-model=\"marked.input\" ng-model-options=\"{updateOn: 'default blur', debounce: {default: 500, blur: 0}}\" class=\"form-control\"></textarea></div><div ng-switch-when=\"preview\" ng-bind-html=\"marked.output\" class=\"col-sm-12\"></div><div ng-switch-when=\"both\" class=\"col-sm-6\"><textarea ng-model=\"marked.input\" ng-model-options=\"{updateOn: 'default blur', debounce: {default: 500, blur: 0}}\" class=\"form-control\"></textarea></div><div ng-switch-when=\"both\" ng-bind-html=\"marked.output\" class=\"col-sm-6\"></div></div>"
