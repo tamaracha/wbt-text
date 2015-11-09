@@ -12,7 +12,7 @@ const config = {
   module: {
     loaders: [
       {
-        loader: 'ng-annotate?add!babel!eslint',
+        loader: 'ng-annotate?add!babel?presets[]=es2015!eslint',
         test: /\.js$/,
         exclude: /(node_modules|bower_components)/
       },
@@ -22,7 +22,7 @@ const config = {
         exclude: /(node_modules|bower_components)/
       },
       {
-        loader: `template-html?engine=jade&doctype=html&basedir=${__dirname}/src`,
+        loader: `ngtemplate?relativeTo=/&prefix=/!template-html?engine=jade&doctype=html&basedir=${__dirname}/src`,
         test: /\.jade$/,
         exclude: /(node_modules|bower_components)/
       },
