@@ -1,4 +1,3 @@
-- var ngModelOptions="{updateOn: 'default blur', debounce: {default: 500, blur: 0}}"
 .row: .col-sm-12
   h3(ng-bind="marked.label")
   ul.nav.nav-tabs
@@ -10,8 +9,8 @@
       button.btn.btn-default(type="button" ng-click="marked.mode='both'") nebeneinander
 .row(ng-switch="marked.mode")
   .col-sm-12(ng-switch-when="markdown")
-    textarea.form-control(ng-model="marked.input" ng-model-options=ngModelOptions)
-  .col-sm-12(ng-switch-when="preview" ng-bind-html="marked.output")
+    textarea.form-control(ng-model="marked.markdown")
+  .col-sm-12(ng-switch-when="preview" markdown="marked.markdown" editor)
   .col-sm-6(ng-switch-when="both")
-    textarea.form-control(ng-model="marked.input" ng-model-options=ngModelOptions)
-  .col-sm-6(ng-switch-when="both" ng-bind-html="marked.output")
+    textarea.form-control(ng-model="marked.markdown")
+  .col-sm-6(ng-switch-when="both" markdown="marked.markdown" editor)

@@ -1,28 +1,25 @@
-export default /*@ngInject*/function markdownDirective($window,$sanitize,markdown){
+export default /*@ngInject*/function markdownDirective($window,$compile,$sanitize,markdown){
   function link(scope,el,attrs){
-    function render(val){
-      const html = scope.renderer.render(val);
-      const saneHtml = $sanitize(html);
-      el.html(saneHtml);
+    function render(){
+      const text = scope.$eval(attrs.markdown) || el.text() || '';
+      const html = $sanitize(markdown.render(text));
+      el.html(html);
+      attrs.hasOwnProperty('editor') ? $compile(el.contents())(scope.$parent.$parent) : $compile(el.contents())(scope);
       if($window.MathJax && attrs.hasOwnProperty('mathJax')){
         $window.MathJax.Hub.Queue(['Typeset', $window.MathJax.Hub, el[0]]);
       }
     }
-    if(!scope.renderer){
-      scope.renderer = markdown;
-    }
-    render(scope.markdown || el.text());
-    if(scope.markdown){
-      const clean = scope.$watch('markdown',render);
+    render();
+    if(attrs.markdown){
+      const clean = scope.$watch(attrs.markdown,() => {
+        render();
+      });
       scope.$on('$destroy',clean);
     }
   }
   return {
     restrict: 'AE',
-    scope: {
-      'markdown': '=?',
-      renderer: '&?'
-    },
+    scope: false,
     link
   };
 }
