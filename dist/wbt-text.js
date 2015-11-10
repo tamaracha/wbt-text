@@ -56,11 +56,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	'use strict';
 
-	Object.defineProperty(exports, '__esModule', {
+	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 	var _angular = __webpack_require__(1);
 
@@ -82,8 +80,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _markedDirective2 = _interopRequireDefault(_markedDirective);
 
-	exports['default'] = _angular2['default'].module('wbt.text', ['ngSanitize']).constant('markdownit', _markdownIt2['default']).provider('markdown', _markdownProvider2['default']).directive('markdown', _markdownDirective2['default']).directive('marked', _markedDirective2['default']).name;
-	module.exports = exports['default'];
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	exports.default = _angular2.default.module('wbt.text', ['ngSanitize']).constant('markdownit', _markdownIt2.default).provider('markdown', _markdownProvider2.default).directive('markdown', _markdownDirective2.default).directive('marked', _markedDirective2.default).name;
 
 /***/ },
 /* 1 */
@@ -5337,16 +5336,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _rules = [
 	  // First 2 params - rule name & source. Secondary array - list of rules,
 	  // which can be terminated by this one.
-	  [ 'code',       __webpack_require__(34) ],
-	  [ 'fence',      __webpack_require__(35),      [ 'paragraph', 'reference', 'blockquote', 'list' ] ],
-	  [ 'blockquote', __webpack_require__(36), [ 'paragraph', 'reference', 'list' ] ],
-	  [ 'hr',         __webpack_require__(37),         [ 'paragraph', 'reference', 'blockquote', 'list' ] ],
-	  [ 'list',       __webpack_require__(38),       [ 'paragraph', 'reference', 'blockquote' ] ],
-	  [ 'reference',  __webpack_require__(39) ],
-	  [ 'heading',    __webpack_require__(40),    [ 'paragraph', 'reference', 'blockquote' ] ],
-	  [ 'lheading',   __webpack_require__(41) ],
-	  [ 'html_block', __webpack_require__(42), [ 'paragraph', 'reference', 'blockquote' ] ],
-	  [ 'table',      __webpack_require__(45),      [ 'paragraph', 'reference' ] ],
+	  [ 'table',      __webpack_require__(34),      [ 'paragraph', 'reference' ] ],
+	  [ 'code',       __webpack_require__(35) ],
+	  [ 'fence',      __webpack_require__(36),      [ 'paragraph', 'reference', 'blockquote', 'list' ] ],
+	  [ 'blockquote', __webpack_require__(37), [ 'paragraph', 'reference', 'list' ] ],
+	  [ 'hr',         __webpack_require__(38),         [ 'paragraph', 'reference', 'blockquote', 'list' ] ],
+	  [ 'list',       __webpack_require__(39),       [ 'paragraph', 'reference', 'blockquote' ] ],
+	  [ 'reference',  __webpack_require__(40) ],
+	  [ 'heading',    __webpack_require__(41),    [ 'paragraph', 'reference', 'blockquote' ] ],
+	  [ 'lheading',   __webpack_require__(42) ],
+	  [ 'html_block', __webpack_require__(43), [ 'paragraph', 'reference', 'blockquote' ] ],
 	  [ 'paragraph',  __webpack_require__(46) ]
 	];
 
@@ -5454,6 +5453,182 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 34 */
 /***/ function(module, exports) {
 
+	// GFM table, non-standard
+
+	'use strict';
+
+
+	function getLine(state, line) {
+	  var pos = state.bMarks[line] + state.blkIndent,
+	      max = state.eMarks[line];
+
+	  return state.src.substr(pos, max - pos);
+	}
+
+	function escapedSplit(str) {
+	  var result = [],
+	      pos = 0,
+	      max = str.length,
+	      ch,
+	      escapes = 0,
+	      lastPos = 0,
+	      backTicked = false,
+	      lastBackTick = 0;
+
+	  ch  = str.charCodeAt(pos);
+
+	  while (pos < max) {
+	    if (ch === 0x60/* ` */ && (escapes % 2 === 0)) {
+	      backTicked = !backTicked;
+	      lastBackTick = pos;
+	    } else if (ch === 0x7c/* | */ && (escapes % 2 === 0) && !backTicked) {
+	      result.push(str.substring(lastPos, pos));
+	      lastPos = pos + 1;
+	    } else if (ch === 0x5c/* \ */) {
+	      escapes++;
+	    } else {
+	      escapes = 0;
+	    }
+
+	    pos++;
+
+	    // If there was an un-closed backtick, go back to just after
+	    // the last backtick, but as if it was a normal character
+	    if (pos === max && backTicked) {
+	      backTicked = false;
+	      pos = lastBackTick + 1;
+	    }
+
+	    ch = str.charCodeAt(pos);
+	  }
+
+	  result.push(str.substring(lastPos));
+
+	  return result;
+	}
+
+
+	module.exports = function table(state, startLine, endLine, silent) {
+	  var ch, lineText, pos, i, nextLine, rows, token,
+	      aligns, t, tableLines, tbodyLines;
+
+	  // should have at least three lines
+	  if (startLine + 2 > endLine) { return false; }
+
+	  nextLine = startLine + 1;
+
+	  if (state.sCount[nextLine] < state.blkIndent) { return false; }
+
+	  // first character of the second line should be '|' or '-'
+
+	  pos = state.bMarks[nextLine] + state.tShift[nextLine];
+	  if (pos >= state.eMarks[nextLine]) { return false; }
+
+	  ch = state.src.charCodeAt(pos);
+	  if (ch !== 0x7C/* | */ && ch !== 0x2D/* - */ && ch !== 0x3A/* : */) { return false; }
+
+	  lineText = getLine(state, startLine + 1);
+	  if (!/^[-:| ]+$/.test(lineText)) { return false; }
+
+	  rows = lineText.split('|');
+	  if (rows.length < 2) { return false; }
+	  aligns = [];
+	  for (i = 0; i < rows.length; i++) {
+	    t = rows[i].trim();
+	    if (!t) {
+	      // allow empty columns before and after table, but not in between columns;
+	      // e.g. allow ` |---| `, disallow ` ---||--- `
+	      if (i === 0 || i === rows.length - 1) {
+	        continue;
+	      } else {
+	        return false;
+	      }
+	    }
+
+	    if (!/^:?-+:?$/.test(t)) { return false; }
+	    if (t.charCodeAt(t.length - 1) === 0x3A/* : */) {
+	      aligns.push(t.charCodeAt(0) === 0x3A/* : */ ? 'center' : 'right');
+	    } else if (t.charCodeAt(0) === 0x3A/* : */) {
+	      aligns.push('left');
+	    } else {
+	      aligns.push('');
+	    }
+	  }
+
+	  lineText = getLine(state, startLine).trim();
+	  if (lineText.indexOf('|') === -1) { return false; }
+	  rows = escapedSplit(lineText.replace(/^\||\|$/g, ''));
+	  if (aligns.length !== rows.length) { return false; }
+	  if (silent) { return true; }
+
+	  token     = state.push('table_open', 'table', 1);
+	  token.map = tableLines = [ startLine, 0 ];
+
+	  token     = state.push('thead_open', 'thead', 1);
+	  token.map = [ startLine, startLine + 1 ];
+
+	  token     = state.push('tr_open', 'tr', 1);
+	  token.map = [ startLine, startLine + 1 ];
+
+	  for (i = 0; i < rows.length; i++) {
+	    token          = state.push('th_open', 'th', 1);
+	    token.map      = [ startLine, startLine + 1 ];
+	    if (aligns[i]) {
+	      token.attrs  = [ [ 'style', 'text-align:' + aligns[i] ] ];
+	    }
+
+	    token          = state.push('inline', '', 0);
+	    token.content  = rows[i].trim();
+	    token.map      = [ startLine, startLine + 1 ];
+	    token.children = [];
+
+	    token          = state.push('th_close', 'th', -1);
+	  }
+
+	  token     = state.push('tr_close', 'tr', -1);
+	  token     = state.push('thead_close', 'thead', -1);
+
+	  token     = state.push('tbody_open', 'tbody', 1);
+	  token.map = tbodyLines = [ startLine + 2, 0 ];
+
+	  for (nextLine = startLine + 2; nextLine < endLine; nextLine++) {
+	    if (state.sCount[nextLine] < state.blkIndent) { break; }
+
+	    lineText = getLine(state, nextLine).trim();
+	    if (lineText.indexOf('|') === -1) { break; }
+	    rows = escapedSplit(lineText.replace(/^\||\|$/g, ''));
+
+	    // set number of columns to number of columns in header row
+	    rows.length = aligns.length;
+
+	    token = state.push('tr_open', 'tr', 1);
+	    for (i = 0; i < rows.length; i++) {
+	      token          = state.push('td_open', 'td', 1);
+	      if (aligns[i]) {
+	        token.attrs  = [ [ 'style', 'text-align:' + aligns[i] ] ];
+	      }
+
+	      token          = state.push('inline', '', 0);
+	      token.content  = rows[i] ? rows[i].trim() : '';
+	      token.children = [];
+
+	      token          = state.push('td_close', 'td', -1);
+	    }
+	    token = state.push('tr_close', 'tr', -1);
+	  }
+	  token = state.push('tbody_close', 'tbody', -1);
+	  token = state.push('table_close', 'table', -1);
+
+	  tableLines[1] = tbodyLines[1] = nextLine;
+	  state.line = nextLine;
+	  return true;
+	};
+
+
+/***/ },
+/* 35 */
+/***/ function(module, exports) {
+
 	// Code block (4 spaces padded)
 
 	'use strict';
@@ -5490,7 +5665,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 35 */
+/* 36 */
 /***/ function(module, exports) {
 
 	// fences (``` lang, ~~~ lang)
@@ -5587,7 +5762,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 36 */
+/* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Block quotes
@@ -5767,7 +5942,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 37 */
+/* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Horizontal rule
@@ -5815,7 +5990,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 38 */
+/* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Lists
@@ -6120,7 +6295,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 39 */
+/* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -6317,7 +6492,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 40 */
+/* 41 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// heading (#, ##, ...)
@@ -6375,7 +6550,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 41 */
+/* 42 */
 /***/ function(module, exports) {
 
 	// lheading (---, ===)
@@ -6431,7 +6606,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 42 */
+/* 43 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// HTML block
@@ -6439,8 +6614,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 
-	var block_names = __webpack_require__(43);
-	var HTML_OPEN_CLOSE_TAG_RE = __webpack_require__(44).HTML_OPEN_CLOSE_TAG_RE;
+	var block_names = __webpack_require__(44);
+	var HTML_OPEN_CLOSE_TAG_RE = __webpack_require__(45).HTML_OPEN_CLOSE_TAG_RE;
 
 	// An array of opening and corresponding closing sequences for html tags,
 	// last argument defines whether it can terminate a paragraph or not
@@ -6508,7 +6683,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 43 */
+/* 44 */
 /***/ function(module, exports) {
 
 	// List of valid html blocks names, accorting to commonmark spec
@@ -6582,7 +6757,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 44 */
+/* 45 */
 /***/ function(module, exports) {
 
 	// Regexps to match html elements
@@ -6613,182 +6788,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	module.exports.HTML_TAG_RE = HTML_TAG_RE;
 	module.exports.HTML_OPEN_CLOSE_TAG_RE = HTML_OPEN_CLOSE_TAG_RE;
-
-
-/***/ },
-/* 45 */
-/***/ function(module, exports) {
-
-	// GFM table, non-standard
-
-	'use strict';
-
-
-	function getLine(state, line) {
-	  var pos = state.bMarks[line] + state.blkIndent,
-	      max = state.eMarks[line];
-
-	  return state.src.substr(pos, max - pos);
-	}
-
-	function escapedSplit(str) {
-	  var result = [],
-	      pos = 0,
-	      max = str.length,
-	      ch,
-	      escapes = 0,
-	      lastPos = 0,
-	      backTicked = false,
-	      lastBackTick = 0;
-
-	  ch  = str.charCodeAt(pos);
-
-	  while (pos < max) {
-	    if (ch === 0x60/* ` */ && (escapes % 2 === 0)) {
-	      backTicked = !backTicked;
-	      lastBackTick = pos;
-	    } else if (ch === 0x7c/* | */ && (escapes % 2 === 0) && !backTicked) {
-	      result.push(str.substring(lastPos, pos));
-	      lastPos = pos + 1;
-	    } else if (ch === 0x5c/* \ */) {
-	      escapes++;
-	    } else {
-	      escapes = 0;
-	    }
-
-	    pos++;
-
-	    // If there was an un-closed backtick, go back to just after
-	    // the last backtick, but as if it was a normal character
-	    if (pos === max && backTicked) {
-	      backTicked = false;
-	      pos = lastBackTick + 1;
-	    }
-
-	    ch = str.charCodeAt(pos);
-	  }
-
-	  result.push(str.substring(lastPos));
-
-	  return result;
-	}
-
-
-	module.exports = function table(state, startLine, endLine, silent) {
-	  var ch, lineText, pos, i, nextLine, rows, token,
-	      aligns, t, tableLines, tbodyLines;
-
-	  // should have at least three lines
-	  if (startLine + 2 > endLine) { return false; }
-
-	  nextLine = startLine + 1;
-
-	  if (state.sCount[nextLine] < state.blkIndent) { return false; }
-
-	  // first character of the second line should be '|' or '-'
-
-	  pos = state.bMarks[nextLine] + state.tShift[nextLine];
-	  if (pos >= state.eMarks[nextLine]) { return false; }
-
-	  ch = state.src.charCodeAt(pos);
-	  if (ch !== 0x7C/* | */ && ch !== 0x2D/* - */ && ch !== 0x3A/* : */) { return false; }
-
-	  lineText = getLine(state, startLine + 1);
-	  if (!/^[-:| ]+$/.test(lineText)) { return false; }
-
-	  rows = lineText.split('|');
-	  if (rows.length < 2) { return false; }
-	  aligns = [];
-	  for (i = 0; i < rows.length; i++) {
-	    t = rows[i].trim();
-	    if (!t) {
-	      // allow empty columns before and after table, but not in between columns;
-	      // e.g. allow ` |---| `, disallow ` ---||--- `
-	      if (i === 0 || i === rows.length - 1) {
-	        continue;
-	      } else {
-	        return false;
-	      }
-	    }
-
-	    if (!/^:?-+:?$/.test(t)) { return false; }
-	    if (t.charCodeAt(t.length - 1) === 0x3A/* : */) {
-	      aligns.push(t.charCodeAt(0) === 0x3A/* : */ ? 'center' : 'right');
-	    } else if (t.charCodeAt(0) === 0x3A/* : */) {
-	      aligns.push('left');
-	    } else {
-	      aligns.push('');
-	    }
-	  }
-
-	  lineText = getLine(state, startLine).trim();
-	  if (lineText.indexOf('|') === -1) { return false; }
-	  rows = escapedSplit(lineText.replace(/^\||\|$/g, ''));
-	  if (aligns.length !== rows.length) { return false; }
-	  if (silent) { return true; }
-
-	  token     = state.push('table_open', 'table', 1);
-	  token.map = tableLines = [ startLine, 0 ];
-
-	  token     = state.push('thead_open', 'thead', 1);
-	  token.map = [ startLine, startLine + 1 ];
-
-	  token     = state.push('tr_open', 'tr', 1);
-	  token.map = [ startLine, startLine + 1 ];
-
-	  for (i = 0; i < rows.length; i++) {
-	    token          = state.push('th_open', 'th', 1);
-	    token.map      = [ startLine, startLine + 1 ];
-	    if (aligns[i]) {
-	      token.attrs  = [ [ 'style', 'text-align:' + aligns[i] ] ];
-	    }
-
-	    token          = state.push('inline', '', 0);
-	    token.content  = rows[i].trim();
-	    token.map      = [ startLine, startLine + 1 ];
-	    token.children = [];
-
-	    token          = state.push('th_close', 'th', -1);
-	  }
-
-	  token     = state.push('tr_close', 'tr', -1);
-	  token     = state.push('thead_close', 'thead', -1);
-
-	  token     = state.push('tbody_open', 'tbody', 1);
-	  token.map = tbodyLines = [ startLine + 2, 0 ];
-
-	  for (nextLine = startLine + 2; nextLine < endLine; nextLine++) {
-	    if (state.sCount[nextLine] < state.blkIndent) { break; }
-
-	    lineText = getLine(state, nextLine).trim();
-	    if (lineText.indexOf('|') === -1) { break; }
-	    rows = escapedSplit(lineText.replace(/^\||\|$/g, ''));
-
-	    // set number of columns to number of columns in header row
-	    rows.length = aligns.length;
-
-	    token = state.push('tr_open', 'tr', 1);
-	    for (i = 0; i < rows.length; i++) {
-	      token          = state.push('td_open', 'td', 1);
-	      if (aligns[i]) {
-	        token.attrs  = [ [ 'style', 'text-align:' + aligns[i] ] ];
-	      }
-
-	      token          = state.push('inline', '', 0);
-	      token.content  = rows[i] ? rows[i].trim() : '';
-	      token.children = [];
-
-	      token          = state.push('td_close', 'td', -1);
-	    }
-	    token = state.push('tr_close', 'tr', -1);
-	  }
-	  token = state.push('tbody_close', 'tbody', -1);
-	  token = state.push('table_close', 'table', -1);
-
-	  tableLines[1] = tbodyLines[1] = nextLine;
-	  state.line = nextLine;
-	  return true;
-	};
 
 
 /***/ },
@@ -8310,7 +8309,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 
-	var HTML_TAG_RE = __webpack_require__(44).HTML_TAG_RE;
+	var HTML_TAG_RE = __webpack_require__(45).HTML_TAG_RE;
 
 
 	function isLetter(ch) {
@@ -10168,15 +10167,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	'use strict';
 
-	Object.defineProperty(exports, '__esModule', {
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 	var _angular = __webpack_require__(1);
 
@@ -10186,8 +10181,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _mdfigcaption2 = _interopRequireDefault(_mdfigcaption);
 
-	/*@ngInject*/
-	var MarkdownProvider = (function () {
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var MarkdownProvider = /*@ngInject*/(function () {
 	  function MarkdownProvider(markdownit) {
 	    _classCallCheck(this, MarkdownProvider);
 
@@ -10199,7 +10197,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        quotes: '„“‚‘',
 	        breaks: true
 	      },
-	      plugins: [_mdfigcaption2['default']]
+	      plugins: [_mdfigcaption2.default]
 	    };
 	    this.markdownit = markdownit;
 	  }
@@ -10215,7 +10213,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    key: '$get',
 	    value: function $get() {
 	      var md = this.markdownit(this.config.preset, this.config.options);
-	      _angular2['default'].forEach(this.config.plugins, function (plugin) {
+	      _angular2.default.forEach(this.config.plugins, function (plugin) {
 	        md.use(plugin);
 	      });
 	      return md;
@@ -10235,7 +10233,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return this.config.options;
 	    },
 	    set: function set(val) {
-	      _angular2['default'].extend(this.config.options, val);
+	      _angular2.default.extend(this.config.options, val);
 	      return this;
 	    }
 	  }, {
@@ -10248,8 +10246,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return MarkdownProvider;
 	})();
 
-	exports['default'] = MarkdownProvider;
-	module.exports = exports['default'];
+	exports.default = MarkdownProvider;
 
 /***/ },
 /* 72 */
@@ -11142,94 +11139,79 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	'use strict';
 
-	Object.defineProperty(exports, '__esModule', {
+	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports['default'] = markdownDirective;
-	/*@ngInject*/
-	function markdownDirective($window, $sanitize, markdown) {
+	exports.default = markdownDirective;
+	/*@ngInject*/function markdownDirective($window, $compile, $sanitize, markdown) {
 	  function link(scope, el, attrs) {
-	    function render(val) {
-	      var html = scope.renderer.render(val);
-	      var saneHtml = $sanitize(html);
-	      el.html(saneHtml);
+	    function render() {
+	      var text = scope.$eval(attrs.markdown) || el.text() || '';
+	      var html = $sanitize(markdown.render(text));
+	      el.html(html);
+	      attrs.hasOwnProperty('editor') ? $compile(el.contents())(scope.$parent.$parent) : $compile(el.contents())(scope);
 	      if ($window.MathJax && attrs.hasOwnProperty('mathJax')) {
 	        $window.MathJax.Hub.Queue(['Typeset', $window.MathJax.Hub, el[0]]);
 	      }
 	    }
-	    if (!scope.renderer) {
-	      scope.renderer = markdown;
-	    }
-	    render(scope.markdown || el.text());
-	    if (scope.markdown) {
-	      var clean = scope.$watch('markdown', render);
+	    render();
+	    if (attrs.markdown) {
+	      var clean = scope.$watch(attrs.markdown, function () {
+	        render();
+	      });
 	      scope.$on('$destroy', clean);
 	    }
 	  }
 	  return {
 	    restrict: 'AE',
-	    scope: {
-	      'markdown': '=?',
-	      renderer: '&?'
-	    },
+	    scope: false,
 	    link: link
 	  };
 	}
-	markdownDirective.$inject = ["$window", "$sanitize", "markdown"];
-
-	module.exports = exports['default'];
+	markdownDirective.$inject = ["$window", "$compile", "$sanitize", "markdown"];
 
 /***/ },
 /* 81 */
 /***/ function(module, exports, __webpack_require__) {
 
-	//import MathJax from 'MathJax';
 	'use strict';
 
-	Object.defineProperty(exports, '__esModule', {
+	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
+	exports.default = markedDirective;
 
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	var _marked = __webpack_require__(82);
 
-	var _markedJade = __webpack_require__(82);
+	var _marked2 = _interopRequireDefault(_marked);
 
-	var _markedJade2 = _interopRequireDefault(_markedJade);
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	exports['default'] = /*@ngInject*/["markdown", function (markdown) {
+	/*@ngInject*/function markedDirective() {
 	  function controller() {
 	    this.mode = 'markdown';
-	  }
-	  function link(scope, el) {
-	    function render(val) {
-	      scope.marked.output = markdown.render(val);
-	      MathJax.Hub.Queue(['Typeset', MathJax.Hub, el[0]]); // eslint-disable-line
-	    }
-	    render(scope.marked.input);
-	    var clean = scope.$watch('marked.input', render);
-	    scope.$on('$destroy', clean);
 	  }
 	  return {
 	    restrict: 'E',
 	    scope: {
-	      input: '=',
+	      markdown: '=text',
 	      label: '@'
 	    },
-	    template: _markedJade2['default'],
+	    templateUrl: _marked2.default,
 	    controller: controller,
 	    controllerAs: 'marked',
-	    bindToController: true,
-	    link: link
+	    bindToController: true
 	  };
-	}];
-
-	module.exports = exports['default'];
+	}
 
 /***/ },
 /* 82 */
 /***/ function(module, exports) {
 
-	module.exports = "<div class=\"row\"><div class=\"col-sm-12\"><h3 ng-bind=\"marked.label\"></h3><ul class=\"nav nav-tabs\"><li ng-class=\"{'active': 'markdown'}[marked.mode]\"><button type=\"button\" ng-click=\"marked.mode='write'\" class=\"btn btn-default\">Markdown</button></li><li ng-class=\"{'active': 'preview'}[marked.mode]\"><button type=\"button\" ng-click=\"marked.mode='preview'\" class=\"btn btn-default\">Vorschau</button></li><li ng-class=\"{'active': 'both'}[marked.mode]\"><button type=\"button\" ng-click=\"marked.mode='both'\" class=\"btn btn-default\">nebeneinander</button></li></ul></div></div><div ng-switch=\"marked.mode\" class=\"row\"><div ng-switch-when=\"markdown\" class=\"col-sm-12\"><textarea ng-model=\"marked.input\" ng-model-options=\"{updateOn: 'default blur', debounce: {default: 500, blur: 0}}\" class=\"form-control\"></textarea></div><div ng-switch-when=\"preview\" ng-bind-html=\"marked.output\" class=\"col-sm-12\"></div><div ng-switch-when=\"both\" class=\"col-sm-6\"><textarea ng-model=\"marked.input\" ng-model-options=\"{updateOn: 'default blur', debounce: {default: 500, blur: 0}}\" class=\"form-control\"></textarea></div><div ng-switch-when=\"both\" ng-bind-html=\"marked.output\" class=\"col-sm-6\"></div></div>"
+	var path = '/Users/tamara/Documents/Entwicklung/wbt-text/src/marked.jade';
+	var html = "<div class=\"row\"><div class=\"col-sm-12\"><h3 ng-bind=\"marked.label\"></h3><ul class=\"nav nav-tabs\"><li ng-class=\"{'active': 'markdown'}[marked.mode]\"><button type=\"button\" ng-click=\"marked.mode='write'\" class=\"btn btn-default\">Markdown</button></li><li ng-class=\"{'active': 'preview'}[marked.mode]\"><button type=\"button\" ng-click=\"marked.mode='preview'\" class=\"btn btn-default\">Vorschau</button></li><li ng-class=\"{'active': 'both'}[marked.mode]\"><button type=\"button\" ng-click=\"marked.mode='both'\" class=\"btn btn-default\">nebeneinander</button></li></ul></div></div><div ng-switch=\"marked.mode\" class=\"row\"><div ng-switch-when=\"markdown\" class=\"col-sm-12\"><textarea ng-model=\"marked.markdown\" class=\"form-control\"></textarea></div><div ng-switch-when=\"preview\" markdown=\"marked.markdown\" editor class=\"col-sm-12\"></div><div ng-switch-when=\"both\" class=\"col-sm-6\"><textarea ng-model=\"marked.markdown\" class=\"form-control\"></textarea></div><div ng-switch-when=\"both\" markdown=\"marked.markdown\" editor class=\"col-sm-6\"></div></div>";
+	window.angular.module('ng').run(['$templateCache', function(c) { c.put(path, html) }]);
+	module.exports = path;
 
 /***/ }
 /******/ ])
