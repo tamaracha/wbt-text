@@ -1,6 +1,6 @@
 {
   "name": "wbt-text",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Angular-Modul zum rendern von Markdown mit MathJax-Formeln",
   "main": "dist/wbt-text.js",
   "scripts": {
