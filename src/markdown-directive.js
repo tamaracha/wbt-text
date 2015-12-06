@@ -1,10 +1,9 @@
-export default /*@ngInject*/function markdownDirective($window,$compile,$sanitize,markdown){
+export default /*@ngInject*/function markdownDirective($window,$sanitize,markdown){
   function link(scope,el,attrs){
     function render(){
       const text = scope.$eval(attrs.markdown) || el.text() || '';
       const html = $sanitize(markdown.render(text));
       el.html(html);
-      attrs.hasOwnProperty('editor') ? $compile(el.contents())(scope.$parent.$parent) : $compile(el.contents())(scope);
       if($window.MathJax && attrs.hasOwnProperty('mathJax')){
         $window.MathJax.Hub.Queue(['Typeset', $window.MathJax.Hub, el[0]]);
       }
