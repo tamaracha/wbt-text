@@ -1,6 +1,27 @@
 # wbt-text
-Angular-Modul zum rendern der WBT-Inhalte
+Angular-Modul zum rendern der WBT-Inhalte im WBT-Framework
 
+## Für WBT-Autoren
+Bei Fragen zur Markdown-Syntax hilft meistens der ausführliche Abschnitt über Markdown aus der Hilfe zu [Pandoc](http://pandoc.org/README.html#pandocs-markdown "Pandoc User’s Guide") weiter. Es werden derzeit nicht alle Features von Pandoc unterstützt, z.B. Literaturverweise. Bei hoher Nachfrage kann ein Feature aber ggf. umgesetzt werden.
+
+### Verlinkungen zu Kapiteln und Subkapiteln
+Um in Markdown auf ein Kapitel oder ein Unterkapitel zu verlinken, benötigt man deren ID und muss einen Link mit einer URL nach folgendem Schema erstellen:
+
+Kapitel
+: content/Kapitel
+
+Subkapitel
+: content/Kapitel/Subkapitel
+
+Im Grunde ist diese URL auch in der Adresszeile zu sehen, wenn man das Zielkapitel geöffnet hat. Die Adresse ist hier ab „content“ zu kopieren.
+
+### Tabellen
+Bitte erst mal nur Pipe-Tables (siehe Hilfe) verwenden.
+
+### Attribute
+In die Markdown-Texte können HTML-Attribute, Klassen und IDs eingefügt werden um die HTML-Ausgabe anzureichern, so dass z.B. Bilder skaliert werden oder Formatierungen feiner eingestellt werden können. Dies ist keine Pandoc-Funktion, sondern ein Plugin für die HTML-Ausgabe. Diese Annotationen werden also in der Downloadausgabe des WBT ignoriert. Die [Hilfe dieses Plugins](https://github.com/rstacruz/markdown-it-decorate "Markdown-It Decorate") beschreibt die Syntax und enthält viele Beispiele.
+
+## Für Entwickler
 Dieses Angular-Modul kann Texte nach HTML übersetzen, die in Markdown geschrieben sind und Formeln in LaTeX enthalten. Ich habe dieses Modul aus meinem Statistik-WBT extrahiert, weil ich es auch für andere Projekte einsetze.
 
 Text
@@ -73,7 +94,7 @@ Füge ein markdown-Element im HTML ein und setze Text zwischen die Tags.
 Es kann das Preset und die Optionen von markdown-it konfiguriert werden. Konfiguriere das Modul mit dem markdownProvider. Es gibt zwei Getter/Setter-Eigenschaften
 
 * markdownProvider.preset: stellt das Preset von markdown-it ein
-* markdownProvider.options: ändert die Optionen von markdown-it. Standardowerte:
+* markdownProvider.options: ändert die Optionen von markdown-it. Standardwerte:
   * html: true
   * typographer: true
  * quotes: '„“‚‘'
