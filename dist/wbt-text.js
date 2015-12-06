@@ -80,22 +80,22 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _markdownItDeflist2 = _interopRequireDefault(_markdownItDeflist);
 
-	var _markdownItAttrs = __webpack_require__(76);
+	var _babelPresetsEs2015MarkdownItDecorate = __webpack_require__(76);
 
-	var _markdownItAttrs2 = _interopRequireDefault(_markdownItAttrs);
+	var _babelPresetsEs2015MarkdownItDecorate2 = _interopRequireDefault(_babelPresetsEs2015MarkdownItDecorate);
 
-	var _markdownItFootnote = __webpack_require__(78);
+	var _markdownItFootnote = __webpack_require__(77);
 
 	var _markdownItFootnote2 = _interopRequireDefault(_markdownItFootnote);
 
-	var _figure = __webpack_require__(79);
+	var _figure = __webpack_require__(78);
 
 	var _figure2 = _interopRequireDefault(_figure);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	module.exports = _angular2.default.module('wbt.text', ['ngSanitize']).constant('markdownit', _markdownIt2.default).provider('markdown', _markdownProvider2.default).config( /*@ngInject*/["markdownProvider", function (markdownProvider) {
-	  markdownProvider.plugins = [_markdownItDeflist2.default, _markdownItAttrs2.default, _markdownItFootnote2.default, _figure2.default];
+	  markdownProvider.plugins = [_markdownItDeflist2.default, _babelPresetsEs2015MarkdownItDecorate2.default, _markdownItFootnote2.default, _figure2.default];
 	}]).directive('markdown', _markdownDirective2.default).directive('marked', _markedDirective2.default).name;
 
 /***/ },
@@ -10579,276 +10579,241 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 76 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	'use strict';
+	/* eslint-disable no-cond-assign */
 
-	var utils = __webpack_require__(77);
+	var tagExpr = /^<!-- ?\{(?:([a-z0-9]+)(\^[0-9]*)?: ?)?(.*)\} ?-->\n?$/;
 
 	module.exports = function attributes(md) {
-
-	  function curlyAttrs(state){
-	    var tokens = state.tokens;
-	    var l = tokens.length;
-	    for (var i = 0; i < l; ++i) {
-	      // block tokens contain markup
-	      // inline tokens contain the text
-	      if (tokens[i].type !== 'inline') {
-	        continue;
-	      }
-
-	      var inlineTokens = tokens[i].children;
-	      if (!inlineTokens || inlineTokens.length <= 0) {
-	        continue;
-	      }
-
-	      // attributes in inline tokens
-	      for (var j=0, k=inlineTokens.length; j<k; ++j) {
-	        // should be inline token of type text
-	        if (!inlineTokens[j] || inlineTokens[j].type !== 'text') {
-	          continue;
-	        }
-	        // token before should not be opening
-	        if (!inlineTokens[j - 1] || inlineTokens[j - 1].nesting === 1) {
-	          continue;
-	        }
-	        // token should contain { in begining
-	        if (inlineTokens[j].content[0] !== '{') {
-	          continue;
-	        }
-	        // } should be found
-	        var endChar = inlineTokens[j].content.indexOf('}');
-	        if (endChar === -1) {
-	          continue;
-	        }
-	        // which token to add attributes to
-	        var attrToken = matchingOpeningToken(inlineTokens, j - 1);
-	        if (!attrToken) {
-	          continue;
-	        }
-	        var attrs = utils.getAttrs(inlineTokens[j].content, 1, endChar);
-	        if (attrs.length !== 0) {
-	          // remove {}
-	          inlineTokens[j].content = inlineTokens[j].content.substr(endChar + 1);
-	          // add attributes
-	          attrToken.info = "b";
-	          utils.addAttrs(attrs, attrToken);
-	        }
-	      }
-
-	      // attributes for blocks
-	      if (hasCurlyEnd(tokens[i])) {
-	        var content = last(inlineTokens).content;
-	        var curlyStart = content.lastIndexOf('{');
-	        var attrs = utils.getAttrs(content, curlyStart + 1, content.length - 1);
-	        // some blocks are hidden, example li > paragraph_open
-	        utils.addAttrs(attrs, firstTokenNotHidden(tokens, i - 1));
-	        if (content[curlyStart - 1] === ' ') {
-	          // trim space before {}
-	          curlyStart -= 1;
-	        }
-	        last(inlineTokens).content = content.slice(0, curlyStart);
-	      }
-
-	    }
-	  }
 	  md.core.ruler.push('curly_attributes', curlyAttrs);
-	  // render inline code blocks with attrs
-	  md.renderer.rules.code_inline = renderCodeInline;
 	};
 
-	function renderCodeInline(tokens, idx, _, __, slf) {
-	  var token = tokens[idx];
-	  return '<code'+ slf.renderAttrs(token) +'>'
-	       + utils.escapeHtml(tokens[idx].content)
-	       + '</code>';
-	}
-	/**
-	 * test if inline token has proper formated curly end
+	/*
+	 * List of tag -> token type mappings. Eg, `<li>` is `list_item_open`.
 	 */
-	function hasCurlyEnd(token) {
-	  // we need minimum four chars, example {.b}
-	  if (!token.content || token.content.length < 4) {
-	    return false;
-	  }
 
-	  // should end in }
-	  var content = token.content;
-	  if (content.charAt(content.length - 1) !== '}') {
-	    return false;
-	  }
+	var opening = {
+	  li: ['list_item'],
+	  ul: ['bullet_list'],
+	  p: ['paragraph'],
+	  ol: ['ordered_list'],
+	  blockquote: ['blockquote'],
+	  h1: ['heading'],
+	  h2: ['heading'],
+	  h3: ['heading'],
+	  h4: ['heading'],
+	  h5: ['heading'],
+	  h6: ['heading'],
+	  a: ['link'],
+	  code: ['code_inline', 'code_block', 'fence']
+	};
 
-	  // should start with {
-	  var curlyStart = content.indexOf('{');
-	  if (curlyStart === -1) {
-	    return false;
-	  }
-	  return true;
-	}
+	var selfClosing = {
+	  hr: true,
+	  image: true
+	};
 
 	/**
-	 * some blocks are hidden (not rendered)
+	 * ...
 	 */
-	function firstTokenNotHidden(tokens, i) {
-	  if (tokens[i].hidden) {
-	    return firstTokenNotHidden(tokens, i - 1);
-	  }
-	  return tokens[i];
+
+	function curlyAttrs(state) {
+	  var tokens = state.tokens;
+	  var omissions = [];
+	  var parent, m;
+	  var stack = { len: 0, contents: [], types: {} };
+
+	  tokens.forEach(function (token, i) {
+	    // Save breadcrumbs so html_block will pick it up
+	    if (isOpener(token.type) || selfClosing[token.type]) {
+	      spush(stack, token);
+	    }
+
+	    // "# Hello\n<!--{.classname}-->"
+	    // ...sequence of [heading_open, inline, heading_close, html_block]
+	    if (token.type === 'html_block') {
+	      m = token.content.match(tagExpr);
+	      if (!m) return;
+
+	      parent = findParent(stack, m[1], m[2]);
+	      if (parent && applyToToken(parent, m[3])) {
+	        omissions.unshift(i);
+	      }
+	    }
+
+	    // "# Hello <!--{.classname} -->"
+	    // { type: 'inline', children: { ..., '<!--{...}-->' } }
+	    if (token.type === 'inline') {
+	      curlyInline(token.children, stack);
+	    }
+	  });
+
+	  // Remove <!--...--> html_block tokens
+	  omissions.forEach(function (idx) {
+	    tokens.splice(idx, 1);
+	  });
 	}
 
 	/**
-	 * find corresponding opening block
+	 * Internal: checks in a token type is a block opener
 	 */
-	function matchingOpeningToken(tokens, i) {
-	  if (tokens[i].type === 'softbreak') {
-	    return false;
+
+	function isOpener(type) {
+	  return type.match(/_(open|start)$/) || type === 'fence' || type === 'code_block';
+	}
+
+	/**
+	 * Internal: Run through inline and stuff
+	 */
+
+	function curlyInline(children, stack) {
+	  var lastText, m, parent;
+
+	  // Keep a list of sub-tokens to be removed
+	  var omissions = [];
+
+	  children.forEach(function (child, i) {
+	    if (isOpener(child.type) || selfClosing[child.type] || child.type === 'code_inline') {
+	      spush(stack, child);
+	    }
+
+	    // Decorate tags are found
+	    if (m = child.content.match(tagExpr)) {
+	      var tag = m[1];
+	      var depth = m[2];
+	      var attrs = m[3];
+
+	      // Remove the comment, then remove the extra space
+	      parent = findParent(stack, tag, depth);
+	      if (parent && applyToToken(parent, attrs)) {
+	        omissions.unshift(i);
+	        if (lastText) trimRight(lastText, 'content');
+	      }
+	    }
+
+	    if (child.type === 'text') lastText = child;
+	  });
+
+	  // Remove them in a separate step so we don't
+	  omissions.forEach(function (idx) {
+	    children.splice(idx, 1);
+	  });
+	}
+
+	/**
+	 * Private: given a list of tokens `list` and `lastParent`, find the one that
+	 * matches `tag`.
+	 */
+
+	function findParent(stack, tag, depth) {
+	  if (!tag) return stack.last;
+
+	  if (depth === '^') {
+	    depth = 1;
+	  } else if (typeof depth === 'string') {
+	    /* '^2' */
+	    depth = +depth.substr(1);
+	  } else {
+	    depth = 0;
 	  }
-	  // non closing blocks, example img
-	  if (tokens[i].nesting === 0) {
-	    return tokens[i];
-	  }
-	  var type = tokens[i].type.replace('_close', '_open');
-	  for (; i >= 0; --i) {
-	    if (tokens[i].type === type) {
-	      return tokens[i];
+
+	  var targets = opening[tag.toLowerCase()] || [tag.toLowerCase()];
+
+	  var target = targets.filter(function (target) {
+	    return stack.types[target];
+	  });
+
+	  var list = stack.types[target];
+	  if (!list) return; // Can't find tag `tag`
+
+	  return list[list.length - 1 - depth];
+	}
+
+	/**
+	 * Private: trim the right
+	 */
+
+	function trimRight(obj, attr) {
+	  obj[attr] = obj[attr].replace(/\s*$/, '');
+	}
+
+	/**
+	 * Private: apply tag to token
+	 *
+	 *     applyToToken(token, '.classname')
+	 */
+
+	function applyToToken(token, attrs) {
+	  var m;
+	  var todo = [];
+
+	  while (attrs.length > 0) {
+	    if (m = attrs.match(/^\s*\.([a-zA-Z0-9\-\_]+)/)) {
+	      todo.push(['class', m[1], { append: true }]);
+	      shift();
+	    } else if (m = attrs.match(/^\s*\#([a-zA-Z0-9\-\_]+)/)) {
+	      todo.push(['id', m[1]]);
+	      shift();
+	    } else if (m = attrs.match(/^\s*([a-zA-Z0-9\-\_]+)="([^"]*)"/)) {
+	      todo.push([m[1], m[2]]);
+	      shift();
+	    } else if (m = attrs.match(/^\s*([a-zA-Z0-9\-\_]+)='([^']*)'/)) {
+	      todo.push([m[1], m[2]]);
+	      shift();
+	    } else if (m = attrs.match(/^\s*([a-zA-Z0-9\-\_]+)=([^ ]*)/)) {
+	      todo.push([m[1], m[2]]);
+	      shift();
+	    } else if (m = attrs.match(/^\s+/)) {
+	      shift();
+	    } else {
+	      return;
 	    }
 	  }
+
+	  todo.forEach(function (args) {
+	    setAttr.apply(this, [token].concat(args));
+	  });
+	  return true;
+
+	  function shift() {
+	    attrs = attrs.substr(m[0].length);
+	  }
 	}
 
-	function last(arr) {
-	  return arr.slice(-1)[0];
+	/**
+	 * Private: sets an attribute `attr` to `value` in a token. If `options.append`
+	 * is true, append to the old value instead of overwriting it.
+	 */
+
+	function setAttr(token, attr, value, options) {
+	  var idx = token.attrIndex(attr);
+
+	  if (idx === -1) {
+	    token.attrPush([attr, value]);
+	  } else if (options && options.append) {
+	    token.attrs[idx][1] = token.attrs[idx][1] + ' ' + value;
+	  } else {
+	    token.attrs[idx][1] = value;
+	  }
 	}
 
+	/**
+	 * Private: pushes a token to the stack
+	 */
+
+	function spush(stack, token) {
+	  var type = token.type.replace(/_(open|start)$/, '');
+	  if (!stack.types[type]) {
+	    stack.types[type] = [];
+	  }
+	  stack.types[type].push(token);
+	  stack.last = token;
+	}
 
 /***/ },
 /* 77 */
-/***/ function(module, exports) {
-
-	/**
-	 * parse {.class #id key=val} strings
-	 * @param {string} str: string to parse
-	 * @param {int} start: where to start parsing (not including {)
-	 * @param {int} end: where to stop parsing (not including })
-	 * @returns {2d array}: [['key', 'val'], ['class', 'red']]
-	 */
-	exports.getAttrs = function(str, start, end) {
-	  // not tab, line feed, form feed, space, solidus, greater than sign, quotation mark, apostrophe and equals sign
-	  var allowedKeyChars = /[^\t\n\f \/>"'=]/;
-	  var pairSeparator = ' ';
-	  var keySeparator = '=';
-	  var classChar = '.';
-	  var idChar = '#';
-
-	  var attrs = [];
-	  var key = '';
-	  var value = '';
-	  var parsingKey = true;
-	  var valueInsideQuotes = false;
-
-	  // read inside {}
-	  for (var i=start; i <= end; ++i) {
-	    var char = str.charAt(i);
-
-	    // switch to reading value if equal sign
-	    if (char === keySeparator) {
-	      parsingKey = false;
-	      continue;
-	    }
-
-	    // {.class}
-	    if (char === classChar && key === '') {
-	      key = 'class';
-	      parsingKey = false;
-	      continue;
-	    }
-
-	    // {#id}
-	    if (char === idChar && key === '') {
-	      key = 'id';
-	      parsingKey = false;
-	      continue;
-	    }
-
-	    // {value="inside quotes"}
-	    if (char === '"' && value === '') {
-	      valueInsideQuotes = true;
-	      continue;
-	    }
-	    if (char === '"' && valueInsideQuotes) {
-	      valueInsideQuotes = false;
-	      continue;
-	    }
-
-	    // read next key/value pair
-	    if ((char === pairSeparator && !valueInsideQuotes) || i === end) {
-	      attrs.push([key, value]);
-	      key = '';
-	      value = '';
-	      parsingKey = true;
-	      continue;
-	    }
-
-	    // continue if character not allowed
-	    if (parsingKey && char.search(allowedKeyChars) === -1) {
-	      continue;
-	    }
-
-	    // no other conditions met; append to key/value
-	    if (parsingKey) {
-	      key += char;
-	      continue;
-	    }
-	    value += char;
-	  }
-	  return attrs;
-	}
-
-	/**
-	 * add attributes from [['key', 'val']] list
-	 * @param {array} attrs: [['key', 'val']]
-	 * @param {token} token: which token to add attributes
-	 * @returns token
-	 */
-	exports.addAttrs = function(attrs, token) {
-	  for (var j=0, l=attrs.length; j<l; ++j) {
-	    var key = attrs[j][0];
-	    if (key === 'class' && token.attrIndex('class') !== -1) {
-	      // append space seperated text string
-	      var classIdx = token.attrIndex('class');
-	      token.attrs[classIdx][1] += ' ' + attrs[j][1];
-	    } else {
-	      token.attrPush(attrs[j]);
-	    }
-	  }
-	  return token;
-	}
-
-	/**
-	 * from https://github.com/markdown-it/markdown-it/blob/master/lib/common/utils.js
-	 */
-	var HTML_ESCAPE_TEST_RE = /[&<>"]/;
-	var HTML_ESCAPE_REPLACE_RE = /[&<>"]/g;
-	var HTML_REPLACEMENTS = {
-	  '&': '&amp;',
-	  '<': '&lt;',
-	  '>': '&gt;',
-	  '"': '&quot;'
-	};
-
-	function replaceUnsafeChar(ch) {
-	  return HTML_REPLACEMENTS[ch];
-	}
-
-	exports.escapeHtml = function(str) {
-	  if (HTML_ESCAPE_TEST_RE.test(str)) {
-	    return str.replace(HTML_ESCAPE_REPLACE_RE, replaceUnsafeChar);
-	  }
-	  return str;
-	}
-
-
-/***/ },
-/* 78 */
 /***/ function(module, exports) {
 
 	// Process footnotes
@@ -11180,7 +11145,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 79 */
+/* 78 */
 /***/ function(module, exports) {
 
 	'use strict';
