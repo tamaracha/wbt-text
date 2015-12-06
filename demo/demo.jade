@@ -1,0 +1,26 @@
+doctype html
+html(lang="de" ng-app="demo")
+  head
+    meta(charset="utf-8")
+    title Demo
+    style.
+      .demo {
+        color: blue;
+        text-align: center;
+      }
+    script(src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.js")
+    script(src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular-sanitize.js")
+    script(src="dist/wbt-text.js")
+    script.
+      angular.module('demo',['ngSanitize','wbt.text'])
+      .controller('democtrl',function(markdown,$sanitize){
+        this.text = '';
+        this.render = function(){
+          console.log(markdown.render(this.text));
+        };
+      });
+  body(ng-controller="democtrl as demo")
+    h2 Input
+    textarea(ng-model="demo.text" ng-change="demo.render()")
+    h2 Output
+    p(markdown="demo.text")

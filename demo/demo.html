@@ -1,0 +1,10 @@
+<!DOCTYPE html><html lang="de" ng-app="demo"><head><meta charset="utf-8"><title>Demo</title><style>.demo {
+  color: blue;
+  text-align: center;
+}</style><script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.js"></script><script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular-sanitize.js"></script><script src="dist/wbt-text.js"></script><script>angular.module('demo',['ngSanitize','wbt.text'])
+.controller('democtrl',function(markdown,$sanitize){
+  this.text = '';
+  this.render = function(){
+    console.log(markdown.render(this.text));
+  };
+});</script></head><body ng-controller="democtrl as demo"><h2>Input</h2><textarea ng-model="demo.text" ng-change="demo.render()"></textarea><h2>Output</h2><p markdown="demo.text"></p></body></html>
