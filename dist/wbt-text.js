@@ -56,10 +56,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	'use strict';
 
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
 	var _angular = __webpack_require__(1);
 
 	var _angular2 = _interopRequireDefault(_angular);
@@ -72,17 +68,35 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _markdownProvider2 = _interopRequireDefault(_markdownProvider);
 
-	var _markdownDirective = __webpack_require__(80);
+	var _markdownDirective = __webpack_require__(72);
 
 	var _markdownDirective2 = _interopRequireDefault(_markdownDirective);
 
-	var _markedDirective = __webpack_require__(81);
+	var _markedDirective = __webpack_require__(73);
 
 	var _markedDirective2 = _interopRequireDefault(_markedDirective);
 
+	var _markdownItDeflist = __webpack_require__(75);
+
+	var _markdownItDeflist2 = _interopRequireDefault(_markdownItDeflist);
+
+	var _markdownItAttrs = __webpack_require__(76);
+
+	var _markdownItAttrs2 = _interopRequireDefault(_markdownItAttrs);
+
+	var _markdownItFootnote = __webpack_require__(78);
+
+	var _markdownItFootnote2 = _interopRequireDefault(_markdownItFootnote);
+
+	var _figure = __webpack_require__(79);
+
+	var _figure2 = _interopRequireDefault(_figure);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	exports.default = _angular2.default.module('wbt.text', ['ngSanitize']).constant('markdownit', _markdownIt2.default).provider('markdown', _markdownProvider2.default).directive('markdown', _markdownDirective2.default).directive('marked', _markedDirective2.default).name;
+	module.exports = _angular2.default.module('wbt.text', ['ngSanitize']).constant('markdownit', _markdownIt2.default).provider('markdown', _markdownProvider2.default).config( /*@ngInject*/["markdownProvider", function (markdownProvider) {
+	  markdownProvider.plugins = [_markdownItDeflist2.default, _markdownItAttrs2.default, _markdownItFootnote2.default, _figure2.default];
+	}]).directive('markdown', _markdownDirective2.default).directive('marked', _markedDirective2.default).name;
 
 /***/ },
 /* 1 */
@@ -8082,11 +8096,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (!silent) {
 	      token         = state.push('link_open', 'a', 1);
 	      token.attrs   = [ [ 'href', fullUrl ] ];
+	      token.markup  = 'autolink';
+	      token.info    = 'auto';
 
 	      token         = state.push('text', '', 0);
 	      token.content = state.md.normalizeLinkText(url);
 
 	      token         = state.push('link_close', 'a', -1);
+	      token.markup  = 'autolink';
+	      token.info    = 'auto';
 	    }
 
 	    state.pos += linkMatch[0].length;
@@ -10177,15 +10195,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _angular2 = _interopRequireDefault(_angular);
 
-	var _mdfigcaption = __webpack_require__(72);
-
-	var _mdfigcaption2 = _interopRequireDefault(_mdfigcaption);
-
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var MarkdownProvider = /*@ngInject*/(function () {
+	/*@ngInject*/
+	var MarkdownProvider = (function () {
 	  function MarkdownProvider(markdownit) {
 	    _classCallCheck(this, MarkdownProvider);
 
@@ -10197,7 +10212,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        quotes: '„“‚‘',
 	        breaks: true
 	      },
-	      plugins: [_mdfigcaption2.default]
+	      plugins: []
 	    };
 	    this.markdownit = markdownit;
 	  }
@@ -10240,6 +10255,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    key: 'plugins',
 	    get: function get() {
 	      return this.config.plugins;
+	    },
+	    set: function set(val) {
+	      this.config.plugins = val;
+	      return this;
 	    }
 	  }]);
 
@@ -10250,891 +10269,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 72 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var Plugin = __webpack_require__(73);
-
-	var MdFigCaption = Plugin(
-	    /~\[([^\]]*)\]\(([^\)]*)\)/,
-	    function(match, utils) {
-	        var caption = match[1];
-	        var url = match[2];
-	        console.log('img stuff: ', caption, url, match);
-	        
-	        //TODO: is there a safer way to do this? I unno...
-	        var html = '<figure><img src="' + url + '" /><figcaption>' + caption + '</figcaption></figure>';
-
-	        return html;
-	    }
-	);
-
-	module.exports = MdFigCaption;
-
-
-/***/ },
-/* 73 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = __webpack_require__(74)
-
-
-/***/ },
-/* 74 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/*!
-	 * markdown-it-regexp
-	 * Copyright (c) 2014 Alex Kocharin
-	 * MIT Licensed
-	 */
-
-	/**
-	 * Module dependencies.
-	 */
-
-	var util  = __webpack_require__(75)
-	var stuff = __webpack_require__(79)
-
-	/**
-	 * Counter for multi usage.
-	 */
-	var counter = 0
-
-	/**
-	 * Expose `Plugin`
-	 */
-
-	module.exports = Plugin
-
-	/**
-	 * Constructor function
-	 */
-
-	function Plugin(regexp, replacer) {
-	  // return value should be a callable function
-	  // with strictly defined options passed by markdown-it
-	  var self = function (md, options) {
-	    self.options = options
-	    self.init(md)
-	  }
-
-	  // initialize plugin object
-	  self.__proto__ = Plugin.prototype
-
-	  // clone regexp with all the flags
-	  var flags = (regexp.global     ? 'g' : '')
-	            + (regexp.multiline  ? 'm' : '')
-	            + (regexp.ignoreCase ? 'i' : '')
-
-	  self.regexp = RegExp('^' + regexp.source, flags)
-
-	  // copy init options
-	  self.replacer = replacer
-
-	  // this plugin can be inserted multiple times,
-	  // so we're generating unique name for it
-	  self.id = 'regexp-' + counter
-	  counter++
-
-	  return self
-	}
-
-	util.inherits(Plugin, Function)
-
-	// function that registers plugin with markdown-it
-	Plugin.prototype.init = function (md) {
-	  md.inline.ruler.push(this.id, this.parse.bind(this))
-
-	  md.renderer.rules[this.id] = this.render.bind(this)
-	}
-
-	Plugin.prototype.parse = function (state, silent) {
-	  // slowwww... maybe use an advanced regexp engine for this
-	  var match = this.regexp.exec(state.src.slice(state.pos))
-	  if (!match) return false
-
-	  // valid match found, now we need to advance cursor
-	  state.pos += match[0].length
-
-	  // don't insert any tokens in silent mode
-	  if (silent) return true
-
-	  var token = state.push(this.id, '', 0)
-	  token.meta = { match: match }
-
-	  return true
-	}
-
-	Plugin.prototype.render = function (tokens, id, options, env) {
-	  return this.replacer(tokens[id].meta.match, stuff)
-	}
-
-
-
-/***/ },
-/* 75 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(global, process) {// Copyright Joyent, Inc. and other Node contributors.
-	//
-	// Permission is hereby granted, free of charge, to any person obtaining a
-	// copy of this software and associated documentation files (the
-	// "Software"), to deal in the Software without restriction, including
-	// without limitation the rights to use, copy, modify, merge, publish,
-	// distribute, sublicense, and/or sell copies of the Software, and to permit
-	// persons to whom the Software is furnished to do so, subject to the
-	// following conditions:
-	//
-	// The above copyright notice and this permission notice shall be included
-	// in all copies or substantial portions of the Software.
-	//
-	// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-	// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-	// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-	// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-	// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-	// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-	// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-	var formatRegExp = /%[sdj%]/g;
-	exports.format = function(f) {
-	  if (!isString(f)) {
-	    var objects = [];
-	    for (var i = 0; i < arguments.length; i++) {
-	      objects.push(inspect(arguments[i]));
-	    }
-	    return objects.join(' ');
-	  }
-
-	  var i = 1;
-	  var args = arguments;
-	  var len = args.length;
-	  var str = String(f).replace(formatRegExp, function(x) {
-	    if (x === '%%') return '%';
-	    if (i >= len) return x;
-	    switch (x) {
-	      case '%s': return String(args[i++]);
-	      case '%d': return Number(args[i++]);
-	      case '%j':
-	        try {
-	          return JSON.stringify(args[i++]);
-	        } catch (_) {
-	          return '[Circular]';
-	        }
-	      default:
-	        return x;
-	    }
-	  });
-	  for (var x = args[i]; i < len; x = args[++i]) {
-	    if (isNull(x) || !isObject(x)) {
-	      str += ' ' + x;
-	    } else {
-	      str += ' ' + inspect(x);
-	    }
-	  }
-	  return str;
-	};
-
-
-	// Mark that a method should not be used.
-	// Returns a modified function which warns once by default.
-	// If --no-deprecation is set, then it is a no-op.
-	exports.deprecate = function(fn, msg) {
-	  // Allow for deprecating things in the process of starting up.
-	  if (isUndefined(global.process)) {
-	    return function() {
-	      return exports.deprecate(fn, msg).apply(this, arguments);
-	    };
-	  }
-
-	  if (process.noDeprecation === true) {
-	    return fn;
-	  }
-
-	  var warned = false;
-	  function deprecated() {
-	    if (!warned) {
-	      if (process.throwDeprecation) {
-	        throw new Error(msg);
-	      } else if (process.traceDeprecation) {
-	        console.trace(msg);
-	      } else {
-	        console.error(msg);
-	      }
-	      warned = true;
-	    }
-	    return fn.apply(this, arguments);
-	  }
-
-	  return deprecated;
-	};
-
-
-	var debugs = {};
-	var debugEnviron;
-	exports.debuglog = function(set) {
-	  if (isUndefined(debugEnviron))
-	    debugEnviron = process.env.NODE_DEBUG || '';
-	  set = set.toUpperCase();
-	  if (!debugs[set]) {
-	    if (new RegExp('\\b' + set + '\\b', 'i').test(debugEnviron)) {
-	      var pid = process.pid;
-	      debugs[set] = function() {
-	        var msg = exports.format.apply(exports, arguments);
-	        console.error('%s %d: %s', set, pid, msg);
-	      };
-	    } else {
-	      debugs[set] = function() {};
-	    }
-	  }
-	  return debugs[set];
-	};
-
-
-	/**
-	 * Echos the value of a value. Trys to print the value out
-	 * in the best way possible given the different types.
-	 *
-	 * @param {Object} obj The object to print out.
-	 * @param {Object} opts Optional options object that alters the output.
-	 */
-	/* legacy: obj, showHidden, depth, colors*/
-	function inspect(obj, opts) {
-	  // default options
-	  var ctx = {
-	    seen: [],
-	    stylize: stylizeNoColor
-	  };
-	  // legacy...
-	  if (arguments.length >= 3) ctx.depth = arguments[2];
-	  if (arguments.length >= 4) ctx.colors = arguments[3];
-	  if (isBoolean(opts)) {
-	    // legacy...
-	    ctx.showHidden = opts;
-	  } else if (opts) {
-	    // got an "options" object
-	    exports._extend(ctx, opts);
-	  }
-	  // set default options
-	  if (isUndefined(ctx.showHidden)) ctx.showHidden = false;
-	  if (isUndefined(ctx.depth)) ctx.depth = 2;
-	  if (isUndefined(ctx.colors)) ctx.colors = false;
-	  if (isUndefined(ctx.customInspect)) ctx.customInspect = true;
-	  if (ctx.colors) ctx.stylize = stylizeWithColor;
-	  return formatValue(ctx, obj, ctx.depth);
-	}
-	exports.inspect = inspect;
-
-
-	// http://en.wikipedia.org/wiki/ANSI_escape_code#graphics
-	inspect.colors = {
-	  'bold' : [1, 22],
-	  'italic' : [3, 23],
-	  'underline' : [4, 24],
-	  'inverse' : [7, 27],
-	  'white' : [37, 39],
-	  'grey' : [90, 39],
-	  'black' : [30, 39],
-	  'blue' : [34, 39],
-	  'cyan' : [36, 39],
-	  'green' : [32, 39],
-	  'magenta' : [35, 39],
-	  'red' : [31, 39],
-	  'yellow' : [33, 39]
-	};
-
-	// Don't use 'blue' not visible on cmd.exe
-	inspect.styles = {
-	  'special': 'cyan',
-	  'number': 'yellow',
-	  'boolean': 'yellow',
-	  'undefined': 'grey',
-	  'null': 'bold',
-	  'string': 'green',
-	  'date': 'magenta',
-	  // "name": intentionally not styling
-	  'regexp': 'red'
-	};
-
-
-	function stylizeWithColor(str, styleType) {
-	  var style = inspect.styles[styleType];
-
-	  if (style) {
-	    return '\u001b[' + inspect.colors[style][0] + 'm' + str +
-	           '\u001b[' + inspect.colors[style][1] + 'm';
-	  } else {
-	    return str;
-	  }
-	}
-
-
-	function stylizeNoColor(str, styleType) {
-	  return str;
-	}
-
-
-	function arrayToHash(array) {
-	  var hash = {};
-
-	  array.forEach(function(val, idx) {
-	    hash[val] = true;
-	  });
-
-	  return hash;
-	}
-
-
-	function formatValue(ctx, value, recurseTimes) {
-	  // Provide a hook for user-specified inspect functions.
-	  // Check that value is an object with an inspect function on it
-	  if (ctx.customInspect &&
-	      value &&
-	      isFunction(value.inspect) &&
-	      // Filter out the util module, it's inspect function is special
-	      value.inspect !== exports.inspect &&
-	      // Also filter out any prototype objects using the circular check.
-	      !(value.constructor && value.constructor.prototype === value)) {
-	    var ret = value.inspect(recurseTimes, ctx);
-	    if (!isString(ret)) {
-	      ret = formatValue(ctx, ret, recurseTimes);
-	    }
-	    return ret;
-	  }
-
-	  // Primitive types cannot have properties
-	  var primitive = formatPrimitive(ctx, value);
-	  if (primitive) {
-	    return primitive;
-	  }
-
-	  // Look up the keys of the object.
-	  var keys = Object.keys(value);
-	  var visibleKeys = arrayToHash(keys);
-
-	  if (ctx.showHidden) {
-	    keys = Object.getOwnPropertyNames(value);
-	  }
-
-	  // IE doesn't make error fields non-enumerable
-	  // http://msdn.microsoft.com/en-us/library/ie/dww52sbt(v=vs.94).aspx
-	  if (isError(value)
-	      && (keys.indexOf('message') >= 0 || keys.indexOf('description') >= 0)) {
-	    return formatError(value);
-	  }
-
-	  // Some type of object without properties can be shortcutted.
-	  if (keys.length === 0) {
-	    if (isFunction(value)) {
-	      var name = value.name ? ': ' + value.name : '';
-	      return ctx.stylize('[Function' + name + ']', 'special');
-	    }
-	    if (isRegExp(value)) {
-	      return ctx.stylize(RegExp.prototype.toString.call(value), 'regexp');
-	    }
-	    if (isDate(value)) {
-	      return ctx.stylize(Date.prototype.toString.call(value), 'date');
-	    }
-	    if (isError(value)) {
-	      return formatError(value);
-	    }
-	  }
-
-	  var base = '', array = false, braces = ['{', '}'];
-
-	  // Make Array say that they are Array
-	  if (isArray(value)) {
-	    array = true;
-	    braces = ['[', ']'];
-	  }
-
-	  // Make functions say that they are functions
-	  if (isFunction(value)) {
-	    var n = value.name ? ': ' + value.name : '';
-	    base = ' [Function' + n + ']';
-	  }
-
-	  // Make RegExps say that they are RegExps
-	  if (isRegExp(value)) {
-	    base = ' ' + RegExp.prototype.toString.call(value);
-	  }
-
-	  // Make dates with properties first say the date
-	  if (isDate(value)) {
-	    base = ' ' + Date.prototype.toUTCString.call(value);
-	  }
-
-	  // Make error with message first say the error
-	  if (isError(value)) {
-	    base = ' ' + formatError(value);
-	  }
-
-	  if (keys.length === 0 && (!array || value.length == 0)) {
-	    return braces[0] + base + braces[1];
-	  }
-
-	  if (recurseTimes < 0) {
-	    if (isRegExp(value)) {
-	      return ctx.stylize(RegExp.prototype.toString.call(value), 'regexp');
-	    } else {
-	      return ctx.stylize('[Object]', 'special');
-	    }
-	  }
-
-	  ctx.seen.push(value);
-
-	  var output;
-	  if (array) {
-	    output = formatArray(ctx, value, recurseTimes, visibleKeys, keys);
-	  } else {
-	    output = keys.map(function(key) {
-	      return formatProperty(ctx, value, recurseTimes, visibleKeys, key, array);
-	    });
-	  }
-
-	  ctx.seen.pop();
-
-	  return reduceToSingleString(output, base, braces);
-	}
-
-
-	function formatPrimitive(ctx, value) {
-	  if (isUndefined(value))
-	    return ctx.stylize('undefined', 'undefined');
-	  if (isString(value)) {
-	    var simple = '\'' + JSON.stringify(value).replace(/^"|"$/g, '')
-	                                             .replace(/'/g, "\\'")
-	                                             .replace(/\\"/g, '"') + '\'';
-	    return ctx.stylize(simple, 'string');
-	  }
-	  if (isNumber(value))
-	    return ctx.stylize('' + value, 'number');
-	  if (isBoolean(value))
-	    return ctx.stylize('' + value, 'boolean');
-	  // For some reason typeof null is "object", so special case here.
-	  if (isNull(value))
-	    return ctx.stylize('null', 'null');
-	}
-
-
-	function formatError(value) {
-	  return '[' + Error.prototype.toString.call(value) + ']';
-	}
-
-
-	function formatArray(ctx, value, recurseTimes, visibleKeys, keys) {
-	  var output = [];
-	  for (var i = 0, l = value.length; i < l; ++i) {
-	    if (hasOwnProperty(value, String(i))) {
-	      output.push(formatProperty(ctx, value, recurseTimes, visibleKeys,
-	          String(i), true));
-	    } else {
-	      output.push('');
-	    }
-	  }
-	  keys.forEach(function(key) {
-	    if (!key.match(/^\d+$/)) {
-	      output.push(formatProperty(ctx, value, recurseTimes, visibleKeys,
-	          key, true));
-	    }
-	  });
-	  return output;
-	}
-
-
-	function formatProperty(ctx, value, recurseTimes, visibleKeys, key, array) {
-	  var name, str, desc;
-	  desc = Object.getOwnPropertyDescriptor(value, key) || { value: value[key] };
-	  if (desc.get) {
-	    if (desc.set) {
-	      str = ctx.stylize('[Getter/Setter]', 'special');
-	    } else {
-	      str = ctx.stylize('[Getter]', 'special');
-	    }
-	  } else {
-	    if (desc.set) {
-	      str = ctx.stylize('[Setter]', 'special');
-	    }
-	  }
-	  if (!hasOwnProperty(visibleKeys, key)) {
-	    name = '[' + key + ']';
-	  }
-	  if (!str) {
-	    if (ctx.seen.indexOf(desc.value) < 0) {
-	      if (isNull(recurseTimes)) {
-	        str = formatValue(ctx, desc.value, null);
-	      } else {
-	        str = formatValue(ctx, desc.value, recurseTimes - 1);
-	      }
-	      if (str.indexOf('\n') > -1) {
-	        if (array) {
-	          str = str.split('\n').map(function(line) {
-	            return '  ' + line;
-	          }).join('\n').substr(2);
-	        } else {
-	          str = '\n' + str.split('\n').map(function(line) {
-	            return '   ' + line;
-	          }).join('\n');
-	        }
-	      }
-	    } else {
-	      str = ctx.stylize('[Circular]', 'special');
-	    }
-	  }
-	  if (isUndefined(name)) {
-	    if (array && key.match(/^\d+$/)) {
-	      return str;
-	    }
-	    name = JSON.stringify('' + key);
-	    if (name.match(/^"([a-zA-Z_][a-zA-Z_0-9]*)"$/)) {
-	      name = name.substr(1, name.length - 2);
-	      name = ctx.stylize(name, 'name');
-	    } else {
-	      name = name.replace(/'/g, "\\'")
-	                 .replace(/\\"/g, '"')
-	                 .replace(/(^"|"$)/g, "'");
-	      name = ctx.stylize(name, 'string');
-	    }
-	  }
-
-	  return name + ': ' + str;
-	}
-
-
-	function reduceToSingleString(output, base, braces) {
-	  var numLinesEst = 0;
-	  var length = output.reduce(function(prev, cur) {
-	    numLinesEst++;
-	    if (cur.indexOf('\n') >= 0) numLinesEst++;
-	    return prev + cur.replace(/\u001b\[\d\d?m/g, '').length + 1;
-	  }, 0);
-
-	  if (length > 60) {
-	    return braces[0] +
-	           (base === '' ? '' : base + '\n ') +
-	           ' ' +
-	           output.join(',\n  ') +
-	           ' ' +
-	           braces[1];
-	  }
-
-	  return braces[0] + base + ' ' + output.join(', ') + ' ' + braces[1];
-	}
-
-
-	// NOTE: These type checking functions intentionally don't use `instanceof`
-	// because it is fragile and can be easily faked with `Object.create()`.
-	function isArray(ar) {
-	  return Array.isArray(ar);
-	}
-	exports.isArray = isArray;
-
-	function isBoolean(arg) {
-	  return typeof arg === 'boolean';
-	}
-	exports.isBoolean = isBoolean;
-
-	function isNull(arg) {
-	  return arg === null;
-	}
-	exports.isNull = isNull;
-
-	function isNullOrUndefined(arg) {
-	  return arg == null;
-	}
-	exports.isNullOrUndefined = isNullOrUndefined;
-
-	function isNumber(arg) {
-	  return typeof arg === 'number';
-	}
-	exports.isNumber = isNumber;
-
-	function isString(arg) {
-	  return typeof arg === 'string';
-	}
-	exports.isString = isString;
-
-	function isSymbol(arg) {
-	  return typeof arg === 'symbol';
-	}
-	exports.isSymbol = isSymbol;
-
-	function isUndefined(arg) {
-	  return arg === void 0;
-	}
-	exports.isUndefined = isUndefined;
-
-	function isRegExp(re) {
-	  return isObject(re) && objectToString(re) === '[object RegExp]';
-	}
-	exports.isRegExp = isRegExp;
-
-	function isObject(arg) {
-	  return typeof arg === 'object' && arg !== null;
-	}
-	exports.isObject = isObject;
-
-	function isDate(d) {
-	  return isObject(d) && objectToString(d) === '[object Date]';
-	}
-	exports.isDate = isDate;
-
-	function isError(e) {
-	  return isObject(e) &&
-	      (objectToString(e) === '[object Error]' || e instanceof Error);
-	}
-	exports.isError = isError;
-
-	function isFunction(arg) {
-	  return typeof arg === 'function';
-	}
-	exports.isFunction = isFunction;
-
-	function isPrimitive(arg) {
-	  return arg === null ||
-	         typeof arg === 'boolean' ||
-	         typeof arg === 'number' ||
-	         typeof arg === 'string' ||
-	         typeof arg === 'symbol' ||  // ES6 symbol
-	         typeof arg === 'undefined';
-	}
-	exports.isPrimitive = isPrimitive;
-
-	exports.isBuffer = __webpack_require__(77);
-
-	function objectToString(o) {
-	  return Object.prototype.toString.call(o);
-	}
-
-
-	function pad(n) {
-	  return n < 10 ? '0' + n.toString(10) : n.toString(10);
-	}
-
-
-	var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
-	              'Oct', 'Nov', 'Dec'];
-
-	// 26 Feb 16:19:34
-	function timestamp() {
-	  var d = new Date();
-	  var time = [pad(d.getHours()),
-	              pad(d.getMinutes()),
-	              pad(d.getSeconds())].join(':');
-	  return [d.getDate(), months[d.getMonth()], time].join(' ');
-	}
-
-
-	// log is just a thin wrapper to console.log that prepends a timestamp
-	exports.log = function() {
-	  console.log('%s - %s', timestamp(), exports.format.apply(exports, arguments));
-	};
-
-
-	/**
-	 * Inherit the prototype methods from one constructor into another.
-	 *
-	 * The Function.prototype.inherits from lang.js rewritten as a standalone
-	 * function (not on Function.prototype). NOTE: If this file is to be loaded
-	 * during bootstrapping this function needs to be rewritten using some native
-	 * functions as prototype setup using normal JavaScript does not work as
-	 * expected during bootstrapping (see mirror.js in r114903).
-	 *
-	 * @param {function} ctor Constructor function which needs to inherit the
-	 *     prototype.
-	 * @param {function} superCtor Constructor function to inherit prototype from.
-	 */
-	exports.inherits = __webpack_require__(78);
-
-	exports._extend = function(origin, add) {
-	  // Don't do anything if add isn't an object
-	  if (!add || !isObject(add)) return origin;
-
-	  var keys = Object.keys(add);
-	  var i = keys.length;
-	  while (i--) {
-	    origin[keys[i]] = add[keys[i]];
-	  }
-	  return origin;
-	};
-
-	function hasOwnProperty(obj, prop) {
-	  return Object.prototype.hasOwnProperty.call(obj, prop);
-	}
-
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(76)))
-
-/***/ },
-/* 76 */
-/***/ function(module, exports) {
-
-	// shim for using process in browser
-
-	var process = module.exports = {};
-	var queue = [];
-	var draining = false;
-	var currentQueue;
-	var queueIndex = -1;
-
-	function cleanUpNextTick() {
-	    draining = false;
-	    if (currentQueue.length) {
-	        queue = currentQueue.concat(queue);
-	    } else {
-	        queueIndex = -1;
-	    }
-	    if (queue.length) {
-	        drainQueue();
-	    }
-	}
-
-	function drainQueue() {
-	    if (draining) {
-	        return;
-	    }
-	    var timeout = setTimeout(cleanUpNextTick);
-	    draining = true;
-
-	    var len = queue.length;
-	    while(len) {
-	        currentQueue = queue;
-	        queue = [];
-	        while (++queueIndex < len) {
-	            if (currentQueue) {
-	                currentQueue[queueIndex].run();
-	            }
-	        }
-	        queueIndex = -1;
-	        len = queue.length;
-	    }
-	    currentQueue = null;
-	    draining = false;
-	    clearTimeout(timeout);
-	}
-
-	process.nextTick = function (fun) {
-	    var args = new Array(arguments.length - 1);
-	    if (arguments.length > 1) {
-	        for (var i = 1; i < arguments.length; i++) {
-	            args[i - 1] = arguments[i];
-	        }
-	    }
-	    queue.push(new Item(fun, args));
-	    if (queue.length === 1 && !draining) {
-	        setTimeout(drainQueue, 0);
-	    }
-	};
-
-	// v8 likes predictible objects
-	function Item(fun, array) {
-	    this.fun = fun;
-	    this.array = array;
-	}
-	Item.prototype.run = function () {
-	    this.fun.apply(null, this.array);
-	};
-	process.title = 'browser';
-	process.browser = true;
-	process.env = {};
-	process.argv = [];
-	process.version = ''; // empty string to avoid regexp issues
-	process.versions = {};
-
-	function noop() {}
-
-	process.on = noop;
-	process.addListener = noop;
-	process.once = noop;
-	process.off = noop;
-	process.removeListener = noop;
-	process.removeAllListeners = noop;
-	process.emit = noop;
-
-	process.binding = function (name) {
-	    throw new Error('process.binding is not supported');
-	};
-
-	process.cwd = function () { return '/' };
-	process.chdir = function (dir) {
-	    throw new Error('process.chdir is not supported');
-	};
-	process.umask = function() { return 0; };
-
-
-/***/ },
-/* 77 */
-/***/ function(module, exports) {
-
-	module.exports = function isBuffer(arg) {
-	  return arg && typeof arg === 'object'
-	    && typeof arg.copy === 'function'
-	    && typeof arg.fill === 'function'
-	    && typeof arg.readUInt8 === 'function';
-	}
-
-/***/ },
-/* 78 */
-/***/ function(module, exports) {
-
-	if (typeof Object.create === 'function') {
-	  // implementation from standard node.js 'util' module
-	  module.exports = function inherits(ctor, superCtor) {
-	    ctor.super_ = superCtor
-	    ctor.prototype = Object.create(superCtor.prototype, {
-	      constructor: {
-	        value: ctor,
-	        enumerable: false,
-	        writable: true,
-	        configurable: true
-	      }
-	    });
-	  };
-	} else {
-	  // old school shim for old browsers
-	  module.exports = function inherits(ctor, superCtor) {
-	    ctor.super_ = superCtor
-	    var TempCtor = function () {}
-	    TempCtor.prototype = superCtor.prototype
-	    ctor.prototype = new TempCtor()
-	    ctor.prototype.constructor = ctor
-	  }
-	}
-
-
-/***/ },
-/* 79 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/*!
-	 * markdown-it-regexp
-	 * Copyright (c) 2014 Alex Kocharin
-	 * MIT Licensed
-	 */
-
-	/**
-	 * Module dependencies.
-	 */
-
-	var util = __webpack_require__(75)
-
-	/**
-	 * Escape special characters in the given string of html.
-	 *
-	 * Borrowed from escape-html component, MIT-licensed
-	 */
-	exports.escape = function(html) {
-	  return String(html)
-	    .replace(/&/g, '&amp;')
-	    .replace(/"/g, '&quot;')
-	    .replace(/'/g, '&#39;')
-	    .replace(/</g, '&lt;')
-	    .replace(/>/g, '&gt;')
-	}
-
-
-
-/***/ },
-/* 80 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11143,13 +10277,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 	exports.default = markdownDirective;
-	/*@ngInject*/function markdownDirective($window, $compile, $sanitize, markdown) {
+	/*@ngInject*/function markdownDirective($window, $sanitize, markdown) {
 	  function link(scope, el, attrs) {
 	    function render() {
 	      var text = scope.$eval(attrs.markdown) || el.text() || '';
 	      var html = $sanitize(markdown.render(text));
 	      el.html(html);
-	      attrs.hasOwnProperty('editor') ? $compile(el.contents())(scope.$parent.$parent) : $compile(el.contents())(scope);
 	      if ($window.MathJax && attrs.hasOwnProperty('mathJax')) {
 	        $window.MathJax.Hub.Queue(['Typeset', $window.MathJax.Hub, el[0]]);
 	      }
@@ -11168,10 +10301,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    link: link
 	  };
 	}
-	markdownDirective.$inject = ["$window", "$compile", "$sanitize", "markdown"];
+	markdownDirective.$inject = ["$window", "$sanitize", "markdown"];
 
 /***/ },
-/* 81 */
+/* 73 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -11181,7 +10314,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.default = markedDirective;
 
-	var _marked = __webpack_require__(82);
+	var _marked = __webpack_require__(74);
 
 	var _marked2 = _interopRequireDefault(_marked);
 
@@ -11205,13 +10338,889 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 82 */
+/* 74 */
 /***/ function(module, exports) {
 
 	var path = '/Users/tamara/Documents/Entwicklung/wbt-text/src/marked.jade';
 	var html = "<div class=\"row\"><div class=\"col-sm-12\"><h3 ng-bind=\"marked.label\"></h3><ul class=\"nav nav-tabs\"><li ng-class=\"{'active': 'markdown'}[marked.mode]\"><button type=\"button\" ng-click=\"marked.mode='write'\" class=\"btn btn-default\">Markdown</button></li><li ng-class=\"{'active': 'preview'}[marked.mode]\"><button type=\"button\" ng-click=\"marked.mode='preview'\" class=\"btn btn-default\">Vorschau</button></li><li ng-class=\"{'active': 'both'}[marked.mode]\"><button type=\"button\" ng-click=\"marked.mode='both'\" class=\"btn btn-default\">nebeneinander</button></li></ul></div></div><div ng-switch=\"marked.mode\" class=\"row\"><div ng-switch-when=\"markdown\" class=\"col-sm-12\"><textarea ng-model=\"marked.markdown\" class=\"form-control\"></textarea></div><div ng-switch-when=\"preview\" markdown=\"marked.markdown\" editor class=\"col-sm-12\"></div><div ng-switch-when=\"both\" class=\"col-sm-6\"><textarea ng-model=\"marked.markdown\" class=\"form-control\"></textarea></div><div ng-switch-when=\"both\" markdown=\"marked.markdown\" editor class=\"col-sm-6\"></div></div>";
 	window.angular.module('ng').run(['$templateCache', function(c) { c.put(path, html) }]);
 	module.exports = path;
+
+/***/ },
+/* 75 */
+/***/ function(module, exports) {
+
+	// Process definition lists
+	//
+	'use strict';
+
+
+	module.exports = function deflist_plugin(md) {
+	  var isSpace = md.utils.isSpace;
+
+	  // Search `[:~][\n ]`, returns next pos after marker on success
+	  // or -1 on fail.
+	  function skipMarker(state, line) {
+	    var pos, marker,
+	        start = state.bMarks[line] + state.tShift[line],
+	        max = state.eMarks[line];
+
+	    if (start >= max) { return -1; }
+
+	    // Check bullet
+	    marker = state.src.charCodeAt(start++);
+	    if (marker !== 0x7E/* ~ */ && marker !== 0x3A/* : */) { return -1; }
+
+	    pos = state.skipSpaces(start);
+
+	    // require space after ":"
+	    if (start === pos) { return -1; }
+
+	    // no empty definitions, e.g. "  : "
+	    if (pos >= max) { return -1; }
+
+	    return start;
+	  }
+
+	  function markTightParagraphs(state, idx) {
+	    var i, l,
+	        level = state.level + 2;
+
+	    for (i = idx + 2, l = state.tokens.length - 2; i < l; i++) {
+	      if (state.tokens[i].level === level && state.tokens[i].type === 'paragraph_open') {
+	        state.tokens[i + 2].hidden = true;
+	        state.tokens[i].hidden = true;
+	        i += 2;
+	      }
+	    }
+	  }
+
+	  function deflist(state, startLine, endLine, silent) {
+	    var ch,
+	        contentStart,
+	        ddLine,
+	        dtLine,
+	        itemLines,
+	        listLines,
+	        listTokIdx,
+	        max,
+	        nextLine,
+	        offset,
+	        oldDDIndent,
+	        oldIndent,
+	        oldParentType,
+	        oldSCount,
+	        oldTShift,
+	        oldTight,
+	        pos,
+	        prevEmptyEnd,
+	        tight,
+	        token;
+
+	    if (silent) {
+	      // quirk: validation mode validates a dd block only, not a whole deflist
+	      if (state.ddIndent < 0) { return false; }
+	      return skipMarker(state, startLine) >= 0;
+	    }
+
+	    nextLine = startLine + 1;
+	    if (state.isEmpty(nextLine)) {
+	      if (++nextLine > endLine) { return false; }
+	    }
+
+	    if (state.sCount[nextLine] < state.blkIndent) { return false; }
+	    contentStart = skipMarker(state, nextLine);
+	    if (contentStart < 0) { return false; }
+
+	    // Start list
+	    listTokIdx = state.tokens.length;
+
+	    token     = state.push('dl_open', 'dl', 1);
+	    token.map = listLines = [ startLine, 0 ];
+
+	    //
+	    // Iterate list items
+	    //
+
+	    dtLine = startLine;
+	    ddLine = nextLine;
+
+	    // One definition list can contain multiple DTs,
+	    // and one DT can be followed by multiple DDs.
+	    //
+	    // Thus, there is two loops here, and label is
+	    // needed to break out of the second one
+	    //
+	    /*eslint no-labels:0,block-scoped-var:0*/
+	    OUTER:
+	    for (;;) {
+	      tight = true;
+	      prevEmptyEnd = false;
+
+	      token          = state.push('dt_open', 'dt', 1);
+	      token.map      = [ dtLine, dtLine ];
+
+	      token          = state.push('inline', '', 0);
+	      token.map      = [ dtLine, dtLine ];
+	      token.content  = state.getLines(dtLine, dtLine + 1, state.blkIndent, false).trim();
+	      token.children = [];
+
+	      token          = state.push('dt_close', 'dt', -1);
+
+	      for (;;) {
+	        token     = state.push('dd_open', 'dd', 1);
+	        token.map = itemLines = [ nextLine, 0 ];
+
+	        pos = contentStart;
+	        max = state.eMarks[ddLine];
+	        offset = state.sCount[ddLine] + contentStart - (state.bMarks[ddLine] + state.tShift[ddLine]);
+
+	        while (pos < max) {
+	          ch = state.src.charCodeAt(pos);
+
+	          if (isSpace(ch)) {
+	            if (ch === 0x09) {
+	              offset += 4 - offset % 4;
+	            } else {
+	              offset++;
+	            }
+	          } else {
+	            break;
+	          }
+
+	          pos++;
+	        }
+
+	        contentStart = pos;
+
+	        oldTight = state.tight;
+	        oldDDIndent = state.ddIndent;
+	        oldIndent = state.blkIndent;
+	        oldTShift = state.tShift[ddLine];
+	        oldSCount = state.sCount[ddLine];
+	        oldParentType = state.parentType;
+	        state.blkIndent = state.ddIndent = state.sCount[ddLine] + 2;
+	        state.tShift[ddLine] = contentStart - state.bMarks[ddLine];
+	        state.sCount[ddLine] = offset;
+	        state.tight = true;
+	        state.parentType = 'deflist';
+
+	        state.md.block.tokenize(state, ddLine, endLine, true);
+
+	        // If any of list item is tight, mark list as tight
+	        if (!state.tight || prevEmptyEnd) {
+	          tight = false;
+	        }
+	        // Item become loose if finish with empty line,
+	        // but we should filter last element, because it means list finish
+	        prevEmptyEnd = (state.line - ddLine) > 1 && state.isEmpty(state.line - 1);
+
+	        state.tShift[ddLine] = oldTShift;
+	        state.sCount[ddLine] = oldSCount;
+	        state.tight = oldTight;
+	        state.parentType = oldParentType;
+	        state.blkIndent = oldIndent;
+	        state.ddIndent = oldDDIndent;
+
+	        token = state.push('dd_close', 'dd', -1);
+
+	        itemLines[1] = nextLine = state.line;
+
+	        if (nextLine >= endLine) { break OUTER; }
+
+	        if (state.sCount[nextLine] < state.blkIndent) { break OUTER; }
+	        contentStart = skipMarker(state, nextLine);
+	        if (contentStart < 0) { break; }
+
+	        ddLine = nextLine;
+
+	        // go to the next loop iteration:
+	        // insert DD tag and repeat checking
+	      }
+
+	      if (nextLine >= endLine) { break; }
+	      dtLine = nextLine;
+
+	      if (state.isEmpty(dtLine)) { break; }
+	      if (state.sCount[dtLine] < state.blkIndent) { break; }
+
+	      ddLine = dtLine + 1;
+	      if (ddLine >= endLine) { break; }
+	      if (state.isEmpty(ddLine)) { ddLine++; }
+	      if (ddLine >= endLine) { break; }
+
+	      if (state.sCount[ddLine] < state.blkIndent) { break; }
+	      contentStart = skipMarker(state, ddLine);
+	      if (contentStart < 0) { break; }
+
+	      // go to the next loop iteration:
+	      // insert DT and DD tags and repeat checking
+	    }
+
+	    // Finilize list
+	    token = state.push('dl_close', 'dl', -1);
+
+	    listLines[1] = nextLine;
+
+	    state.line = nextLine;
+
+	    // mark paragraphs tight if needed
+	    if (tight) {
+	      markTightParagraphs(state, listTokIdx);
+	    }
+
+	    return true;
+	  }
+
+
+	  md.block.ruler.before('paragraph', 'deflist', deflist, { alt: [ 'paragraph', 'reference' ] });
+	};
+
+
+/***/ },
+/* 76 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var utils = __webpack_require__(77);
+
+	module.exports = function attributes(md) {
+
+	  function curlyAttrs(state){
+	    var tokens = state.tokens;
+	    var l = tokens.length;
+	    for (var i = 0; i < l; ++i) {
+	      // block tokens contain markup
+	      // inline tokens contain the text
+	      if (tokens[i].type !== 'inline') {
+	        continue;
+	      }
+
+	      var inlineTokens = tokens[i].children;
+	      if (!inlineTokens || inlineTokens.length <= 0) {
+	        continue;
+	      }
+
+	      // attributes in inline tokens
+	      for (var j=0, k=inlineTokens.length; j<k; ++j) {
+	        // should be inline token of type text
+	        if (!inlineTokens[j] || inlineTokens[j].type !== 'text') {
+	          continue;
+	        }
+	        // token before should not be opening
+	        if (!inlineTokens[j - 1] || inlineTokens[j - 1].nesting === 1) {
+	          continue;
+	        }
+	        // token should contain { in begining
+	        if (inlineTokens[j].content[0] !== '{') {
+	          continue;
+	        }
+	        // } should be found
+	        var endChar = inlineTokens[j].content.indexOf('}');
+	        if (endChar === -1) {
+	          continue;
+	        }
+	        // which token to add attributes to
+	        var attrToken = matchingOpeningToken(inlineTokens, j - 1);
+	        if (!attrToken) {
+	          continue;
+	        }
+	        var attrs = utils.getAttrs(inlineTokens[j].content, 1, endChar);
+	        if (attrs.length !== 0) {
+	          // remove {}
+	          inlineTokens[j].content = inlineTokens[j].content.substr(endChar + 1);
+	          // add attributes
+	          attrToken.info = "b";
+	          utils.addAttrs(attrs, attrToken);
+	        }
+	      }
+
+	      // attributes for blocks
+	      if (hasCurlyEnd(tokens[i])) {
+	        var content = last(inlineTokens).content;
+	        var curlyStart = content.lastIndexOf('{');
+	        var attrs = utils.getAttrs(content, curlyStart + 1, content.length - 1);
+	        // some blocks are hidden, example li > paragraph_open
+	        utils.addAttrs(attrs, firstTokenNotHidden(tokens, i - 1));
+	        if (content[curlyStart - 1] === ' ') {
+	          // trim space before {}
+	          curlyStart -= 1;
+	        }
+	        last(inlineTokens).content = content.slice(0, curlyStart);
+	      }
+
+	    }
+	  }
+	  md.core.ruler.push('curly_attributes', curlyAttrs);
+	  // render inline code blocks with attrs
+	  md.renderer.rules.code_inline = renderCodeInline;
+	};
+
+	function renderCodeInline(tokens, idx, _, __, slf) {
+	  var token = tokens[idx];
+	  return '<code'+ slf.renderAttrs(token) +'>'
+	       + utils.escapeHtml(tokens[idx].content)
+	       + '</code>';
+	}
+	/**
+	 * test if inline token has proper formated curly end
+	 */
+	function hasCurlyEnd(token) {
+	  // we need minimum four chars, example {.b}
+	  if (!token.content || token.content.length < 4) {
+	    return false;
+	  }
+
+	  // should end in }
+	  var content = token.content;
+	  if (content.charAt(content.length - 1) !== '}') {
+	    return false;
+	  }
+
+	  // should start with {
+	  var curlyStart = content.indexOf('{');
+	  if (curlyStart === -1) {
+	    return false;
+	  }
+	  return true;
+	}
+
+	/**
+	 * some blocks are hidden (not rendered)
+	 */
+	function firstTokenNotHidden(tokens, i) {
+	  if (tokens[i].hidden) {
+	    return firstTokenNotHidden(tokens, i - 1);
+	  }
+	  return tokens[i];
+	}
+
+	/**
+	 * find corresponding opening block
+	 */
+	function matchingOpeningToken(tokens, i) {
+	  if (tokens[i].type === 'softbreak') {
+	    return false;
+	  }
+	  // non closing blocks, example img
+	  if (tokens[i].nesting === 0) {
+	    return tokens[i];
+	  }
+	  var type = tokens[i].type.replace('_close', '_open');
+	  for (; i >= 0; --i) {
+	    if (tokens[i].type === type) {
+	      return tokens[i];
+	    }
+	  }
+	}
+
+	function last(arr) {
+	  return arr.slice(-1)[0];
+	}
+
+
+/***/ },
+/* 77 */
+/***/ function(module, exports) {
+
+	/**
+	 * parse {.class #id key=val} strings
+	 * @param {string} str: string to parse
+	 * @param {int} start: where to start parsing (not including {)
+	 * @param {int} end: where to stop parsing (not including })
+	 * @returns {2d array}: [['key', 'val'], ['class', 'red']]
+	 */
+	exports.getAttrs = function(str, start, end) {
+	  // not tab, line feed, form feed, space, solidus, greater than sign, quotation mark, apostrophe and equals sign
+	  var allowedKeyChars = /[^\t\n\f \/>"'=]/;
+	  var pairSeparator = ' ';
+	  var keySeparator = '=';
+	  var classChar = '.';
+	  var idChar = '#';
+
+	  var attrs = [];
+	  var key = '';
+	  var value = '';
+	  var parsingKey = true;
+	  var valueInsideQuotes = false;
+
+	  // read inside {}
+	  for (var i=start; i <= end; ++i) {
+	    var char = str.charAt(i);
+
+	    // switch to reading value if equal sign
+	    if (char === keySeparator) {
+	      parsingKey = false;
+	      continue;
+	    }
+
+	    // {.class}
+	    if (char === classChar && key === '') {
+	      key = 'class';
+	      parsingKey = false;
+	      continue;
+	    }
+
+	    // {#id}
+	    if (char === idChar && key === '') {
+	      key = 'id';
+	      parsingKey = false;
+	      continue;
+	    }
+
+	    // {value="inside quotes"}
+	    if (char === '"' && value === '') {
+	      valueInsideQuotes = true;
+	      continue;
+	    }
+	    if (char === '"' && valueInsideQuotes) {
+	      valueInsideQuotes = false;
+	      continue;
+	    }
+
+	    // read next key/value pair
+	    if ((char === pairSeparator && !valueInsideQuotes) || i === end) {
+	      attrs.push([key, value]);
+	      key = '';
+	      value = '';
+	      parsingKey = true;
+	      continue;
+	    }
+
+	    // continue if character not allowed
+	    if (parsingKey && char.search(allowedKeyChars) === -1) {
+	      continue;
+	    }
+
+	    // no other conditions met; append to key/value
+	    if (parsingKey) {
+	      key += char;
+	      continue;
+	    }
+	    value += char;
+	  }
+	  return attrs;
+	}
+
+	/**
+	 * add attributes from [['key', 'val']] list
+	 * @param {array} attrs: [['key', 'val']]
+	 * @param {token} token: which token to add attributes
+	 * @returns token
+	 */
+	exports.addAttrs = function(attrs, token) {
+	  for (var j=0, l=attrs.length; j<l; ++j) {
+	    var key = attrs[j][0];
+	    if (key === 'class' && token.attrIndex('class') !== -1) {
+	      // append space seperated text string
+	      var classIdx = token.attrIndex('class');
+	      token.attrs[classIdx][1] += ' ' + attrs[j][1];
+	    } else {
+	      token.attrPush(attrs[j]);
+	    }
+	  }
+	  return token;
+	}
+
+	/**
+	 * from https://github.com/markdown-it/markdown-it/blob/master/lib/common/utils.js
+	 */
+	var HTML_ESCAPE_TEST_RE = /[&<>"]/;
+	var HTML_ESCAPE_REPLACE_RE = /[&<>"]/g;
+	var HTML_REPLACEMENTS = {
+	  '&': '&amp;',
+	  '<': '&lt;',
+	  '>': '&gt;',
+	  '"': '&quot;'
+	};
+
+	function replaceUnsafeChar(ch) {
+	  return HTML_REPLACEMENTS[ch];
+	}
+
+	exports.escapeHtml = function(str) {
+	  if (HTML_ESCAPE_TEST_RE.test(str)) {
+	    return str.replace(HTML_ESCAPE_REPLACE_RE, replaceUnsafeChar);
+	  }
+	  return str;
+	}
+
+
+/***/ },
+/* 78 */
+/***/ function(module, exports) {
+
+	// Process footnotes
+	//
+	'use strict';
+
+	////////////////////////////////////////////////////////////////////////////////
+	// Renderer partials
+
+	function _footnote_ref(tokens, idx) {
+	  var n = Number(tokens[idx].meta.id + 1).toString();
+	  var id = 'fnref' + n;
+	  if (tokens[idx].meta.subId > 0) {
+	    id += ':' + tokens[idx].meta.subId;
+	  }
+	  return '<sup class="footnote-ref"><a href="#fn' + n + '" id="' + id + '">[' + n + ']</a></sup>';
+	}
+	function _footnote_block_open(tokens, idx, options) {
+	  return (options.xhtmlOut ? '<hr class="footnotes-sep" />\n' : '<hr class="footnotes-sep">\n') +
+	         '<section class="footnotes">\n' +
+	         '<ol class="footnotes-list">\n';
+	}
+	function _footnote_block_close() {
+	  return '</ol>\n</section>\n';
+	}
+	function _footnote_open(tokens, idx) {
+	  var id = Number(tokens[idx].meta.id + 1).toString();
+	  return '<li id="fn' + id + '"  class="footnote-item">';
+	}
+	function _footnote_close() {
+	  return '</li>\n';
+	}
+	function _footnote_anchor(tokens, idx) {
+	  var n = Number(tokens[idx].meta.id + 1).toString();
+	  var id = 'fnref' + n;
+	  if (tokens[idx].meta.subId > 0) {
+	    id += ':' + tokens[idx].meta.subId;
+	  }
+	  return ' <a href="#' + id + '" class="footnote-backref">\u21a9</a>'; /* ↩ */
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+
+
+	module.exports = function sub_plugin(md) {
+	  var parseLinkLabel = md.helpers.parseLinkLabel,
+	      isSpace = md.utils.isSpace;
+
+	  md.renderer.rules.footnote_ref          = _footnote_ref;
+	  md.renderer.rules.footnote_block_open   = _footnote_block_open;
+	  md.renderer.rules.footnote_block_close  = _footnote_block_close;
+	  md.renderer.rules.footnote_open         = _footnote_open;
+	  md.renderer.rules.footnote_close        = _footnote_close;
+	  md.renderer.rules.footnote_anchor       = _footnote_anchor;
+
+	  // Process footnote block definition
+	  function footnote_def(state, startLine, endLine, silent) {
+	    var oldBMark, oldTShift, oldSCount, oldParentType, pos, label, token,
+	        initial, offset, ch, posAfterColon,
+	        start = state.bMarks[startLine] + state.tShift[startLine],
+	        max = state.eMarks[startLine];
+
+	    // line should be at least 5 chars - "[^x]:"
+	    if (start + 4 > max) { return false; }
+
+	    if (state.src.charCodeAt(start) !== 0x5B/* [ */) { return false; }
+	    if (state.src.charCodeAt(start + 1) !== 0x5E/* ^ */) { return false; }
+
+	    for (pos = start + 2; pos < max; pos++) {
+	      if (state.src.charCodeAt(pos) === 0x20) { return false; }
+	      if (state.src.charCodeAt(pos) === 0x5D /* ] */) {
+	        break;
+	      }
+	    }
+
+	    if (pos === start + 2) { return false; } // no empty footnote labels
+	    if (pos + 1 >= max || state.src.charCodeAt(++pos) !== 0x3A /* : */) { return false; }
+	    if (silent) { return true; }
+	    pos++;
+
+	    if (!state.env.footnotes) { state.env.footnotes = {}; }
+	    if (!state.env.footnotes.refs) { state.env.footnotes.refs = {}; }
+	    label = state.src.slice(start + 2, pos - 2);
+	    state.env.footnotes.refs[':' + label] = -1;
+
+	    token       = new state.Token('footnote_reference_open', '', 1);
+	    token.meta  = { label: label };
+	    token.level = state.level++;
+	    state.tokens.push(token);
+
+	    oldBMark = state.bMarks[startLine];
+	    oldTShift = state.tShift[startLine];
+	    oldSCount = state.sCount[startLine];
+	    oldParentType = state.parentType;
+
+	    posAfterColon = pos;
+	    initial = offset = state.sCount[startLine] + pos - (state.bMarks[startLine] + state.tShift[startLine]);
+
+	    while (pos < max) {
+	      ch = state.src.charCodeAt(pos);
+
+	      if (isSpace(ch)) {
+	        if (ch === 0x09) {
+	          offset += 4 - offset % 4;
+	        } else {
+	          offset++;
+	        }
+	      } else {
+	        break;
+	      }
+
+	      pos++;
+	    }
+
+	    state.tShift[startLine] = pos - posAfterColon;
+	    state.sCount[startLine] = offset - initial;
+
+	    state.bMarks[startLine] = posAfterColon;
+	    state.blkIndent += 4;
+	    state.parentType = 'footnote';
+
+	    if (state.sCount[startLine] < state.blkIndent) {
+	      state.sCount[startLine] += state.blkIndent;
+	    }
+
+	    state.md.block.tokenize(state, startLine, endLine, true);
+
+	    state.parentType = oldParentType;
+	    state.blkIndent -= 4;
+	    state.tShift[startLine] = oldTShift;
+	    state.sCount[startLine] = oldSCount;
+	    state.bMarks[startLine] = oldBMark;
+
+	    token       = new state.Token('footnote_reference_close', '', -1);
+	    token.level = --state.level;
+	    state.tokens.push(token);
+
+	    return true;
+	  }
+
+	  // Process inline footnotes (^[...])
+	  function footnote_inline(state, silent) {
+	    var labelStart,
+	        labelEnd,
+	        footnoteId,
+	        token,
+	        tokens,
+	        max = state.posMax,
+	        start = state.pos;
+
+	    if (start + 2 >= max) { return false; }
+	    if (state.src.charCodeAt(start) !== 0x5E/* ^ */) { return false; }
+	    if (state.src.charCodeAt(start + 1) !== 0x5B/* [ */) { return false; }
+
+	    labelStart = start + 2;
+	    labelEnd = parseLinkLabel(state, start + 1);
+
+	    // parser failed to find ']', so it's not a valid note
+	    if (labelEnd < 0) { return false; }
+
+	    // We found the end of the link, and know for a fact it's a valid link;
+	    // so all that's left to do is to call tokenizer.
+	    //
+	    if (!silent) {
+	      if (!state.env.footnotes) { state.env.footnotes = {}; }
+	      if (!state.env.footnotes.list) { state.env.footnotes.list = []; }
+	      footnoteId = state.env.footnotes.list.length;
+
+	      state.md.inline.parse(
+	        state.src.slice(labelStart, labelEnd),
+	        state.md,
+	        state.env,
+	        tokens = []
+	      );
+
+	      token      = state.push('footnote_ref', '', 0);
+	      token.meta = { id: footnoteId };
+
+	      state.env.footnotes.list[footnoteId] = { tokens: tokens };
+	    }
+
+	    state.pos = labelEnd + 1;
+	    state.posMax = max;
+	    return true;
+	  }
+
+	  // Process footnote references ([^...])
+	  function footnote_ref(state, silent) {
+	    var label,
+	        pos,
+	        footnoteId,
+	        footnoteSubId,
+	        token,
+	        max = state.posMax,
+	        start = state.pos;
+
+	    // should be at least 4 chars - "[^x]"
+	    if (start + 3 > max) { return false; }
+
+	    if (!state.env.footnotes || !state.env.footnotes.refs) { return false; }
+	    if (state.src.charCodeAt(start) !== 0x5B/* [ */) { return false; }
+	    if (state.src.charCodeAt(start + 1) !== 0x5E/* ^ */) { return false; }
+
+	    for (pos = start + 2; pos < max; pos++) {
+	      if (state.src.charCodeAt(pos) === 0x20) { return false; }
+	      if (state.src.charCodeAt(pos) === 0x0A) { return false; }
+	      if (state.src.charCodeAt(pos) === 0x5D /* ] */) {
+	        break;
+	      }
+	    }
+
+	    if (pos === start + 2) { return false; } // no empty footnote labels
+	    if (pos >= max) { return false; }
+	    pos++;
+
+	    label = state.src.slice(start + 2, pos - 1);
+	    if (typeof state.env.footnotes.refs[':' + label] === 'undefined') { return false; }
+
+	    if (!silent) {
+	      if (!state.env.footnotes.list) { state.env.footnotes.list = []; }
+
+	      if (state.env.footnotes.refs[':' + label] < 0) {
+	        footnoteId = state.env.footnotes.list.length;
+	        state.env.footnotes.list[footnoteId] = { label: label, count: 0 };
+	        state.env.footnotes.refs[':' + label] = footnoteId;
+	      } else {
+	        footnoteId = state.env.footnotes.refs[':' + label];
+	      }
+
+	      footnoteSubId = state.env.footnotes.list[footnoteId].count;
+	      state.env.footnotes.list[footnoteId].count++;
+
+	      token      = state.push('footnote_ref', '', 0);
+	      token.meta = { id: footnoteId, subId: footnoteSubId };
+	    }
+
+	    state.pos = pos;
+	    state.posMax = max;
+	    return true;
+	  }
+
+	  // Glue footnote tokens to end of token stream
+	  function footnote_tail(state) {
+	    var i, l, j, t, lastParagraph, list, token, tokens, current, currentLabel,
+	        insideRef = false,
+	        refTokens = {};
+
+	    if (!state.env.footnotes) { return; }
+
+	    state.tokens = state.tokens.filter(function(tok) {
+	      if (tok.type === 'footnote_reference_open') {
+	        insideRef = true;
+	        current = [];
+	        currentLabel = tok.meta.label;
+	        return false;
+	      }
+	      if (tok.type === 'footnote_reference_close') {
+	        insideRef = false;
+	        // prepend ':' to avoid conflict with Object.prototype members
+	        refTokens[':' + currentLabel] = current;
+	        return false;
+	      }
+	      if (insideRef) { current.push(tok); }
+	      return !insideRef;
+	    });
+
+	    if (!state.env.footnotes.list) { return; }
+	    list = state.env.footnotes.list;
+
+	    token = new state.Token('footnote_block_open', '', 1);
+	    state.tokens.push(token);
+
+	    for (i = 0, l = list.length; i < l; i++) {
+	      token      = new state.Token('footnote_open', '', 1);
+	      token.meta = { id: i };
+	      state.tokens.push(token);
+
+	      if (list[i].tokens) {
+	        tokens = [];
+
+	        token          = new state.Token('paragraph_open', 'p', 1);
+	        token.block    = true;
+	        tokens.push(token);
+
+	        token          = new state.Token('inline', '', 0);
+	        token.children = list[i].tokens;
+	        token.content  = '';
+	        tokens.push(token);
+
+	        token          = new state.Token('paragraph_close', 'p', -1);
+	        token.block    = true;
+	        tokens.push(token);
+
+	      } else if (list[i].label) {
+	        tokens = refTokens[':' + list[i].label];
+	      }
+
+	      state.tokens = state.tokens.concat(tokens);
+	      if (state.tokens[state.tokens.length - 1].type === 'paragraph_close') {
+	        lastParagraph = state.tokens.pop();
+	      } else {
+	        lastParagraph = null;
+	      }
+
+	      t = list[i].count > 0 ? list[i].count : 1;
+	      for (j = 0; j < t; j++) {
+	        token      = new state.Token('footnote_anchor', '', 0);
+	        token.meta = { id: i, subId: j };
+	        state.tokens.push(token);
+	      }
+
+	      if (lastParagraph) {
+	        state.tokens.push(lastParagraph);
+	      }
+
+	      token = new state.Token('footnote_close', '', -1);
+	      state.tokens.push(token);
+	    }
+
+	    token = new state.Token('footnote_block_close', '', -1);
+	    state.tokens.push(token);
+	  }
+
+	  md.block.ruler.before('reference', 'footnote_def', footnote_def, { alt: [ 'paragraph', 'reference' ] });
+	  md.inline.ruler.after('image', 'footnote_inline', footnote_inline);
+	  md.inline.ruler.after('footnote_inline', 'footnote_ref', footnote_ref);
+	  md.core.ruler.after('inline', 'footnote_tail', footnote_tail);
+	};
+
+
+/***/ },
+/* 79 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = figure_plugin;
+	function figure(state, line, endline, silent) {
+	  if (!state.isEmpty(line + 1)) {
+	    return false;
+	  }
+	  var src = state.getLines(line, line + 1).trim();
+	  var patt = /!\[([^\]]*)\]\(([^\)]*)\)/;
+	  var res = src.match(patt);
+	  if (!res) {
+	    return false;
+	  }
+	  state.line = line + 2;
+	  if (silent) {
+	    return true;
+	  }
+	  var token = state.push('paragraph_open', 'figure', 1);
+	  token.map = [line, line + 1];
+	  token = state.push('inline', 0);
+	  token.content = src;
+	  token.children = [];
+	  token = state.push('paragraph_open', 'figcaption', 1);
+	  token.map = [line, line + 1];
+	  token = state.push('inline', 0);
+	  token.content = res[1];
+	  token.children = [];
+	  state.push('paragraph_close', 'figcaption', -1);
+	  state.push('paragraph_close', 'figure', -1);
+	  return true;
+	}
+
+	function figure_plugin(md) {
+	  md.block.ruler.before('paragraph', 'figure', figure);
+	}
 
 /***/ }
 /******/ ])
