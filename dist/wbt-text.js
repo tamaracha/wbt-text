@@ -10277,12 +10277,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 	exports.default = markdownDirective;
-	/*@ngInject*/function markdownDirective($window, $sanitize, markdown) {
+	/*@ngInject*/function markdownDirective($window, markdown, $compile) {
 	  function link(scope, el, attrs) {
 	    function render() {
 	      var text = scope.$eval(attrs.markdown) || el.text() || '';
-	      var html = $sanitize(markdown.render(text));
+	      var html = markdown.render(text);
 	      el.html(html);
+	      $compile(el.contents())(scope);
 	      if ($window.MathJax && attrs.hasOwnProperty('mathJax')) {
 	        $window.MathJax.Hub.Queue(['Typeset', $window.MathJax.Hub, el[0]]);
 	      }
@@ -10301,7 +10302,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    link: link
 	  };
 	}
-	markdownDirective.$inject = ["$window", "$sanitize", "markdown"];
+	markdownDirective.$inject = ["$window", "markdown", "$compile"];
 
 /***/ },
 /* 73 */

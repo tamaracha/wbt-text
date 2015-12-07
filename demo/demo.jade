@@ -10,17 +10,16 @@ html(lang="de" ng-app="demo")
       }
     script(src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.js")
     script(src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular-sanitize.js")
-    script(src="dist/wbt-text.js")
+    script(src="../dist/wbt-text.js")
     script.
       angular.module('demo',['ngSanitize','wbt.text'])
       .controller('democtrl',function(markdown,$sanitize){
         this.text = '';
-        this.render = function(){
-          console.log(markdown.render(this.text));
-        };
+        this.ex = 'hallo';
       });
   body(ng-controller="democtrl as demo")
     h2 Input
-    textarea(ng-model="demo.text" ng-change="demo.render()")
+    input(type="text" ng-model="demo.ex")
+    textarea(ng-model="demo.text")
     h2 Output
-    p(markdown="demo.text")
+    div(markdown="demo.text")
